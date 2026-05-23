@@ -1,0 +1,81 @@
+program ProjetoFaculdade;
+
+{$APPTYPE CONSOLE}
+
+{$R *.res}
+
+uses
+  Winapi.Windows,
+  System.SysUtils,
+  System.Classes,
+  System.SyncObjs,
+  Horse,
+  Horse.CORS,
+  Horse.Jhonson,
+  Horse.Commons,
+  System.JSON,
+  Controlador_Login in 'controllers\Controlador_Login.pas',
+  Servico_Login in 'services\Servico_Login.pas',
+  Conexao in 'providers\Conexao.pas',
+  Autenticacao in 'providers\Autenticacao.pas',
+  Excecoes in 'utils\Excecoes.pas',
+  Mensagens in 'utils\Mensagens.pas',
+  Secrets in 'utils\Secrets.pas',
+  Controlador_Usuario in 'controllers\Controlador_Usuario.pas',
+  Servico_Usuario in 'services\Servico_Usuario.pas',
+  Servico_Documento in 'services\Servico_Documento.pas',
+  Controlador_Documento in 'controllers\Controlador_Documento.pas',
+  Servico_Interessado in 'services\Servico_Interessado.pas',
+  Controlador_Interessado in 'controllers\Controlador_Interessado.pas',
+  Servico_Arquivo in 'services\Servico_Arquivo.pas',
+  Controlador_Arquivo in 'controllers\Controlador_Arquivo.pas',
+  Servico_Dashboard in 'services\Servico_Dashboard.pas',
+  Controlador_Dashboard in 'controllers\Controlador_Dashboard.pas',
+  Servico_Produtos in 'services\Servico_Produtos.pas',
+  Controlador_Produtos in 'Controlador_Produtos.pas',
+  Servico_Solicitacao in 'services\Servico_Solicitacao.pas',
+  Controlador_Solicitacao in 'controllers\Controlador_Solicitacao.pas',
+  Servico_AdminMedicamentos in 'services\Servico_AdminMedicamentos.pas',
+  Controlador_AdminMedicamentos in 'controllers\Controlador_AdminMedicamentos.pas',
+  Servico_AdminSolicitacoes in 'services\Servico_AdminSolicitacoes.pas',
+  Controlador_AdminSolicitacoes in 'controllers\Controlador_AdminSolicitacoes.pas',
+  Servico_AdminUsuarios in 'services\Servico_AdminUsuarios.pas',
+  Controlador_AdminUsuarios in 'controllers\Controlador_AdminUsuarios.pas';
+
+begin
+
+   try
+  	THorse.Use(CORS);
+    THorse.Use(MiddlewareTratarErros);
+    THorse.Use(Jhonson);
+
+    TControladorAutenticacao.RegistrarRotas;
+    TControladorUsuario.RegistrarRotas;
+    TControladorDocumento.RegistrarRotas;
+    TControladorInteressado.RegistrarRotas;
+    TControladorArquivo.RegistrarRotas;
+    TControladorDashbord.RegistrarRotas;
+    TControladorProdutos.RegistrarRotas;
+    TControladorSolicitacao.RegistrarRotas;
+    TControladorAdminMedicamentos.RegistrarRotas;
+    TControladorAdminSolicitacoes.RegistrarRotas;
+    TControladorAdminUsuarios.RegistrarRotas;
+
+    THorse.Listen(9000,
+        procedure
+        begin
+          Writeln('======================================================');
+          Writeln('                 SISTEMA API                   ');
+          Writeln('======================================================');
+          Writeln(' * Versao do Sistema : 26.0428-2201');
+          Writeln(' * Iniciado em       : ' + FormatDateTime('dd/mm/yyyy hh:nn:ss', Now));
+          Writeln(' * Status            : OPERACIONAL');
+          Writeln(' * Porta de Escuta   : 9000');
+          Writeln('======================================================');
+          Writeln('');
+        end);
+  finally
+
+  end;
+
+end.
