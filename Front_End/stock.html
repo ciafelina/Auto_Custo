@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Consultar Estoque — Medicamentos de Alto Custo</title>
+  <link rel="stylesheet" href="css/style.css"/>
+</head>
+<body>
+
+<div id="mob-overlay" aria-hidden="true"></div>
+
+<!-- ═══ SIDEBAR ═══ -->
+<nav id="sidebar" aria-label="Navegação lateral">
+  <div class="sidebar-header">
+    <div>
+      <div class="sidebar-logo">Medicamentos</div>
+      <div class="sidebar-tagline">Alto Custo — SJRP</div>
+    </div>
+  </div>
+
+  <div id="menu-paciente" class="hidden">
+    <div class="nav-section">
+      <p class="nav-section-label">Geral</p>
+      <a class="nav-item" href="patient-dashboard.html">
+        <span class="nav-icon" aria-hidden="true">📊</span> Dashboard
+      </a>
+    </div>
+    <div class="nav-section">
+      <p class="nav-section-label">Medicamentos</p>
+      <a class="nav-item active" href="stock.html" aria-current="page">
+        <span class="nav-icon" aria-hidden="true">📦</span> Consultar Estoque
+      </a>
+    </div>
+  </div>
+
+  <div id="menu-admin" class="hidden">
+    <div class="nav-section">
+      <p class="nav-section-label">Geral</p>
+      <a class="nav-item" href="admin-dashboard.html">
+        <span class="nav-icon" aria-hidden="true">🛡️</span> Painel Admin
+      </a>
+    </div>
+    <div class="nav-section">
+      <p class="nav-section-label">Medicamentos</p>
+      <a class="nav-item active" href="stock.html" aria-current="page">
+        <span class="nav-icon" aria-hidden="true">📦</span> Consultar Estoque
+      </a>
+    </div>
+    <div class="nav-section">
+      <p class="nav-section-label">Administração</p>
+      <a class="nav-item hidden" id="link-usuarios" href="admin-users.html">
+        <span class="nav-icon" aria-hidden="true">👥</span> Usuários
+      </a>
+      <a class="nav-item" href="admin-medications.html">
+        <span class="nav-icon" aria-hidden="true">💊</span> Medicamentos
+      </a>
+      <a class="nav-item" href="admin-requests.html">
+        <span class="nav-icon" aria-hidden="true">📋</span> Solicitações
+      </a>
+    </div>
+  </div>
+
+  <div class="sidebar-footer">
+    <button class="user-chip" onclick="window.location.href='profile.html'" aria-label="Ir para perfil">
+      <div class="avatar" id="sidebar-avatar" aria-hidden="true">--</div>
+      <div class="min-w-0">
+        <div class="user-name truncate" id="sidebar-nome">Carregando...</div>
+        <div class="user-role" id="sidebar-cargo">Carregando...</div>
+      </div>
+    </button>
+    <a href="#" onclick="sairDaConta(event)" class="btn btn-outline btn-sm btn-block mt-2"
+      style="color:var(--red-600);border-color:var(--red-300)">Sair da Conta</a>
+  </div>
+</nav>
+
+<!-- ═══ TOPBAR ═══ -->
+<header id="topbar" role="banner">
+  <button id="hamburger" aria-label="Abrir menu" aria-expanded="false" aria-controls="sidebar">☰</button>
+  <span id="page-title">Dashboard</span>
+  <div style="flex:1"></div>
+  <time id="data-atual" class="text-sm text-gray-500"></time>
+</header>
+
+<!-- ═══ MAIN ═══ -->
+<main id="main">
+
+  <div class="page-header">
+    <div class="page-header-text">
+      <h1 class="text-blue-900">Consulta de Estoque</h1>
+      <p>Medicamentos de Alto Custo Disponíveis</p>
+    </div>
+  </div>
+
+  <div class="card p-6 mb-6">
+    <h2 class="text-blue-900 mb-4 flex items-center gap-2" style="font-size:1rem">
+      <span aria-hidden="true">🔎</span> Filtros
+    </h2>
+    <div class="grid grid-3 gap-4">
+      <div class="form-group">
+        <label class="form-label" for="f-search">Buscar Medicamento</label>
+        <div class="search-wrap">
+          <span class="search-icon" aria-hidden="true">🔍</span>
+          <input class="input" id="f-search" type="search" placeholder="Nome ou descrição…"/>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="f-cat">Categoria</label>
+        <select class="input" id="f-cat">
+          <option value="">Todas as Categorias</option>
+          <option>Oncologia</option>
+          <option>Reumatologia</option>
+          <option>Neurologia</option>
+          <option>Imunologia</option>
+          <option>Endocrinologia</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="f-avail">Disponibilidade</label>
+        <select class="input" id="f-avail">
+          <option value="">Todos</option>
+          <option value="available">Disponível</option>
+          <option value="low">Estoque Crítico</option>
+          <option value="out">Indisponível</option>
+        </select>
+      </div>
+    </div>
+    <p class="text-sm text-gray-500 mt-3">
+      Total cadastrado: <strong class="text-blue-900" id="lbl-total-registros">0</strong> medicamento(s)
+    </p>
+  </div>
+
+  <div id="lista-medicamentos" role="list" aria-label="Lista de medicamentos">
+      <p class="text-gray-500 text-center mt-4">Carregando estoque...</p>
+  </div>
+
+  <div class="flex items-center justify-between mt-6 card p-4">
+      <button id="btn-prev-page" class="btn btn-secondary btn-sm" disabled>← Anterior</button>
+      <span class="text-sm font-semibold text-gray-600">
+          Página <span id="lbl-pagina-atual">1</span> de <span id="lbl-total-paginas">1</span>
+      </span>
+      <button id="btn-next-page" class="btn btn-secondary btn-sm" disabled>Próxima →</button>
+  </div>
+
+</main>
+
+<div class="modal-overlay hidden" id="modal-request" role="dialog" aria-modal="true" aria-labelledby="req-modal-title">
+  <div class="modal modal-sm">
+    <div class="modal-header">
+      <h2 class="modal-title" id="req-modal-title">Solicitar Medicamento</h2>
+      <button class="modal-close" onclick="fecharModal()" aria-label="Fechar">✕</button>
+    </div>
+    <p class="font-semibold text-gray-700 mb-1" id="mod-nome-med">Nome do Remédio</p>
+    <p class="text-sm text-gray-500 mb-4">
+      Disponível: <span class="font-semibold text-green-600" id="mod-estoque">0</span> unidades
+    </p>
+    <form id="form-solicitar">
+      <input type="hidden" id="mod-id-med" value=""> 
+
+      <div class="form-group mb-4">
+        <label class="form-label" for="req-qty">
+          Quantidade <span class="form-required" aria-hidden="true">*</span>
+        </label>
+        <input class="input" id="req-qty" name="quantity" type="number" min="1" value="1"/>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline btn-sm" onclick="fecharModal()">Cancelar</button>
+        <button type="submit" class="btn btn-primary btn-sm">Confirmar Solicitação</button>
+      </div>
+    </form>
+  </div>
+</div>
+<script src="js/stock.js"></script>
+</body>
+</html>

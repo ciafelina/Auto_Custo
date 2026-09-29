@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Meu Perfil — Medicamentos de Alto Custo</title>
+  <link rel="stylesheet" href="css/style.css"/>
+</head>
+<body>
+
+<div id="mob-overlay" aria-hidden="true"></div>
+
+<nav id="sidebar" aria-label="Navegação lateral">
+  <div class="sidebar-header">
+    <div>
+      <div class="sidebar-logo">Medicamentos</div>
+      <div class="sidebar-tagline">Alto Custo — SJRP</div>
+    </div>
+  </div>
+
+  <div id="menu-paciente" class="hidden">
+    <div class="nav-section">
+      <p class="nav-section-label">Geral</p>
+      <a class="nav-item" href="patient-dashboard.html">
+        <span class="nav-icon" aria-hidden="true">📊</span> Dashboard
+      </a>
+    </div>
+    <div class="nav-section">
+      <p class="nav-section-label">Medicamentos</p>
+      <a class="nav-item" href="stock.html">
+        <span class="nav-icon" aria-hidden="true">📦</span> Consultar Estoque
+      </a>
+    </div>
+  </div>
+
+  <div id="menu-admin" class="hidden">
+    <div class="nav-section">
+      <p class="nav-section-label">Geral</p>
+      <a class="nav-item" href="admin-dashboard.html">
+        <span class="nav-icon" aria-hidden="true">🛡️</span> Painel Admin
+      </a>
+    </div>
+    <div class="nav-section">
+      <p class="nav-section-label">Medicamentos</p>
+      <a class="nav-item" href="stock.html">
+        <span class="nav-icon" aria-hidden="true">📦</span> Consultar Estoque
+      </a>
+    </div>
+    <div class="nav-section">
+      <p class="nav-section-label">Administração</p>
+      <a class="nav-item hidden" id="link-usuarios" href="admin-users.html">
+        <span class="nav-icon" aria-hidden="true">👥</span> Usuários
+      </a>
+      <a class="nav-item" href="admin-medications.html">
+        <span class="nav-icon" aria-hidden="true">💊</span> Medicamentos
+      </a>
+      <a class="nav-item" href="admin-requests.html">
+        <span class="nav-icon" aria-hidden="true">📋</span> Solicitações
+      </a>
+    </div>
+  </div>
+
+  <div class="sidebar-footer">
+    <button class="user-chip" aria-label="Perfil atual" style="cursor:default">
+      <div class="avatar" aria-hidden="true">--</div>
+      <div class="min-w-0">
+        <div class="user-name truncate" id="sidebar-nome">Carregando...</div>
+        <div class="user-role" id="sidebar-cargo">Carregando...</div>
+      </div>
+    </button>
+    <a href="#" onclick="sairDaConta(event)" class="btn btn-outline btn-sm btn-block mt-2"
+      style="color:var(--red-600);border-color:var(--red-300)">Sair da Conta</a>
+  </div>
+</nav>
+
+<header id="topbar" role="banner">
+  <button id="hamburger" aria-label="Abrir menu" aria-expanded="false" aria-controls="sidebar">☰</button>
+  <span id="page-title">Meu Perfil</span>
+  <div style="flex:1"></div>
+</header>
+
+<main id="main">
+
+  <div class="page-header">
+    <div class="page-header-text">
+      <h1 class="text-blue-900">Meu Perfil</h1>
+      <p>Gerencie suas informações pessoais</p>
+    </div>
+    <a href="#" id="btn-voltar" class="btn btn-outline btn-sm">← Voltar</a>
+  </div>
+
+  <div style="max-width:580px">
+
+    <section class="card p-8 mb-6" aria-labelledby="info-title" id="view-section">
+      <h2 id="info-title" class="text-blue-900 mb-6" style="font-size:1.1rem">Informações Pessoais</h2>
+
+      <div class="flex items-center gap-4 mb-6">
+        <div class="avatar" style="width:56px;height:56px;font-size:1.25rem" aria-hidden="true">--</div>
+        <div>
+          <div class="font-bold text-lg" id="p-nome">Carregando...</div>
+          <span class="badge badge-patient">Paciente</span>
+        </div>
+      </div>
+
+      <dl class="flex flex-col gap-4">
+        <div>
+          <dt class="text-sm text-gray-500">E-mail</dt>
+          <dd class="font-semibold" id="p-email">...</dd>
+        </div>
+        <div>
+          <dt class="text-sm text-gray-500">CPF</dt>
+          <dd class="font-semibold" id="p-cpf">...</dd>
+        </div>
+        <div>
+          <dt class="text-sm text-gray-500">Data de Nascimento</dt>
+          <dd class="font-semibold" id="p-nascimento">...</dd>
+        </div>
+        <div>
+          <dt class="text-sm text-gray-500">Telefone</dt>
+          <dd class="font-semibold" id="p-telefone">...</dd>
+        </div>
+        <div>
+          <dt class="text-sm text-gray-500">Endereço</dt>
+          <dd class="font-semibold" id="p-endereco">...</dd>
+        </div>
+        <div>
+          <dt class="text-sm text-gray-500">Informações de Saúde</dt>
+          <dd class="font-semibold" id="p-saude">...</dd>
+        </div>
+      </dl>
+
+      <button class="btn btn-secondary btn-sm mt-6"
+        onclick="document.getElementById('view-section').classList.add('hidden');document.getElementById('edit-section').classList.remove('hidden')">
+        ✏️ Editar Perfil
+      </button>
+    </section>
+
+    <section class="card p-8 mb-6 hidden" aria-labelledby="edit-title" id="edit-section">
+      <h2 id="edit-title" class="text-blue-900 mb-6" style="font-size:1.1rem">Editar Perfil</h2>
+
+      <form id="form-edit-profile">
+        <div class="flex flex-col gap-4">
+
+          <div class="form-group">
+            <label class="form-label" for="pe-phone">Telefone</label>
+            <input class="input" id="pe-phone" name="phone" type="tel" placeholder="(00) 00000-0000"/>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="pe-address">Endereço</label>
+            <input class="input" id="pe-address" name="address" type="text"/>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="pe-birth">Data de Nascimento</label>
+            <input class="input" id="pe-birth" name="birthDate" type="date"/>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="pe-health">Informações de Saúde</label>
+            <textarea class="input" id="pe-health" name="healthData" rows="3"
+              placeholder="Alergias, condições médicas, medicamentos em uso…"></textarea>
+          </div>
+
+          <div class="form-group mt-4 p-4 border border-gray-200" style="border-radius: var(--radius); background-color: #f8fafc;">
+            <label class="form-label" for="pe-pass">Trocar Senha (Opcional)</label>
+            <input class="input" id="pe-pass" type="password" placeholder="Digite a nova senha"/>
+            <p class="form-hint mt-1">Deixe em branco se não quiser alterar sua senha atual.</p>
+          </div>
+
+        </div>
+
+        <div class="flex gap-3 mt-6">
+          <button type="submit" class="btn btn-primary btn-sm flex-1">Salvar Alterações</button>
+          <button type="button" class="btn btn-secondary btn-sm flex-1"
+            onclick="document.getElementById('edit-section').classList.add('hidden');document.getElementById('view-section').classList.remove('hidden')">
+            Cancelar
+          </button>
+        </div>
+      </form>
+    </section>
+
+    <section class="card p-8 border border-red-200" aria-labelledby="delete-title" style="background-color: #fffafb;">
+      <h2 id="delete-title" class="text-red-600 mb-2" style="font-size:1.1rem">Excluir Conta</h2>
+      <p class="text-sm text-gray-600 mb-4">
+        <strong>Atenção:</strong> Ao excluir sua conta, você perderá o acesso ao sistema e todo o seu histórico. Esta ação é irreversível.
+      </p>
+      <button onclick="excluirConta()" class="btn btn-danger btn-sm btn-block mt-2">
+        🗑️ Excluir Minha Conta Definitivamente
+      </button>
+    </section>
+
+  </div>
+</main>
+
+<script src="js/profile.js"></script>
+</body>
+</html>

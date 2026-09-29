@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Medicamentos — Medicamentos de Alto Custo</title>
+  <link rel="stylesheet" href="css/style.css"/>
+</head>
+<body>
+
+<div id="mob-overlay" aria-hidden="true"></div>
+
+<nav id="sidebar" aria-label="Navegação lateral">
+  <div class="sidebar-header">
+    <div>
+      <div class="sidebar-logo">Medicamentos</div>
+      <div class="sidebar-tagline">Alto Custo — SJRP</div>
+    </div>
+  </div>
+  <div class="nav-section">
+    <p class="nav-section-label">Geral</p>
+    <a class="nav-item" href="admin-dashboard.html">
+      <span class="nav-icon" aria-hidden="true">🛡️</span> Painel Admin
+    </a>
+  </div>
+  <div class="nav-section">
+    <p class="nav-section-label">Medicamentos</p>
+    <a class="nav-item" href="stock.html">
+      <span class="nav-icon" aria-hidden="true">📦</span> Consultar Estoque
+    </a>
+  </div>
+  <div class="nav-section">
+    <p class="nav-section-label">Administração</p>
+    <a class="nav-item" href="admin-users.html">
+      <span class="nav-icon" aria-hidden="true">👥</span> Usuários
+    </a>
+    <a class="nav-item active" href="admin-medications.html" aria-current="page">
+      <span class="nav-icon" aria-hidden="true">💊</span> Medicamentos
+    </a>
+    <a class="nav-item" href="admin-requests.html">
+      <span class="nav-icon" aria-hidden="true">📋</span> Solicitações
+    </a>
+  </div>
+  <div class="sidebar-footer">
+    <button class="user-chip" onclick="window.location.href='profile.html'" aria-label="Ir para perfil">
+      <div class="avatar" id="sidebar-avatar" aria-hidden="true">--</div>
+      <div class="min-w-0">
+        <div class="user-name truncate" id="sidebar-user-name">Carregando...</div>
+        <div class="user-role" id="sidebar-role">Administrador</div>
+      </div>
+    </button>
+    <a href="#" onclick="sairDaConta(event)" class="btn btn-outline btn-sm btn-block mt-2"
+      style="color:var(--red-600);border-color:var(--red-300)">Sair da Conta</a>
+  </div>
+</nav>
+
+<header id="topbar" role="banner">
+  <button id="hamburger" aria-label="Abrir menu" aria-expanded="false" aria-controls="sidebar">☰</button>
+  <span id="page-title">Gestão de Medicamentos</span>
+  <div style="flex:1"></div>
+  <time id="data-atual" class="text-sm text-gray-500"></time>
+</header>
+
+<main id="main">
+
+  <div class="page-header">
+    <div class="page-header-text">
+      <h1 class="text-blue-900">Gestão de Medicamentos</h1>
+      <p>Cadastre, edite e gerencie os medicamentos do sistema</p>
+    </div>
+    <button class="btn btn-primary btn-md" onclick="abrirModalMedicamento()">
+      + Novo Medicamento
+    </button>
+  </div>
+
+  <div class="card p-4 mb-4">
+    <div class="flex items-center gap-4 flex-wrap">
+      <div class="search-wrap flex-1" style="min-width:200px">
+        <span class="search-icon" aria-hidden="true">🔍</span>
+        <input class="input" id="med-search" type="search" placeholder="Buscar por nome ou categoria…"/>
+      </div>
+      <p class="text-sm text-gray-500 flex-shrink-0">
+        <strong class="text-blue-900" id="lbl-total-meds">0</strong> medicamento(s)
+      </p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="table-wrap">
+      <table aria-label="Lista de medicamentos cadastrados">
+        <thead>
+          <tr>
+            <th scope="col">Nome</th>
+            <th scope="col">Categoria</th>
+            <th scope="col">Dosagem</th>
+            <th scope="col">Fabricante</th>
+            <th scope="col">Estoque</th>
+            <th scope="col">Mín.</th>
+            <th scope="col">Status</th>
+            <th scope="col">Ações</th>
+          </tr>
+        </thead>
+        <tbody id="tabela-medicamentos">
+          <tr>
+            <td colspan="8" class="text-center py-4 text-gray-500">Carregando medicamentos...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="flex items-center justify-between p-4 border-t border-gray-200">
+      <button id="btn-prev-page" class="btn btn-secondary btn-sm" disabled>← Anterior</button>
+      <span class="text-sm font-semibold text-gray-600">
+          Página <span id="lbl-pagina-atual">1</span> de <span id="lbl-total-paginas">1</span>
+      </span>
+      <button id="btn-next-page" class="btn btn-secondary btn-sm" disabled>Próxima →</button>
+    </div>
+
+  </div>
+
+</main>
+
+<div class="modal-overlay hidden" id="modal-med" role="dialog" aria-modal="true" aria-labelledby="modal-med-title">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 class="modal-title" id="modal-med-title">Novo Medicamento</h2>
+      <button class="modal-close" onclick="fecharModal('modal-med')" aria-label="Fechar">✕</button>
+    </div>
+    <form id="form-med" novalidate>
+      <input type="hidden" id="m-id" value=""> 
+
+      <div class="grid grid-2 gap-4">
+        <div class="form-group">
+          <label class="form-label" for="m-name">Nome <span class="form-required">*</span></label>
+          <input class="input" id="m-name" name="name" type="text" placeholder="Nome do medicamento" required/>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="m-cat">Categoria <span class="form-required">*</span></label>
+          <input class="input" id="m-cat" name="category" type="text" placeholder="Ex: Oncologia" required/>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="m-dos">Dosagem</label>
+          <input class="input" id="m-dos" name="dosage" type="text" placeholder="Ex: 500mg"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="m-mfr">Fabricante</label>
+          <input class="input" id="m-mfr" name="manufacturer" type="text" placeholder="Nome do fabricante"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="m-stock">Estoque Atual</label>
+          <input class="input" id="m-stock" name="stockQuantity" type="number" min="0" value="0"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="m-min">Estoque Mínimo</label>
+          <input class="input" id="m-min" name="minStockLevel" type="number" min="0" value="10"/>
+        </div>
+      </div>
+      <div class="form-group mt-4">
+        <label class="form-label" for="m-desc">Descrição</label>
+        <textarea class="input" id="m-desc" name="description" rows="3" placeholder="Indicações, observações…"></textarea>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline btn-sm" onclick="fecharModal('modal-med')">Cancelar</button>
+        <button type="submit" class="btn btn-primary btn-sm">Salvar Medicamento</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="modal-overlay hidden" id="modal-stock" role="dialog" aria-modal="true" aria-labelledby="modal-stock-title">
+  <div class="modal modal-sm">
+    <div class="modal-header">
+      <h2 class="modal-title" id="modal-stock-title">Atualizar Estoque</h2>
+      <button class="modal-close" onclick="fecharModal('modal-stock')" aria-label="Fechar">✕</button>
+    </div>
+    <p class="font-semibold text-gray-700 mb-4" id="stock-med-name">Nome do Remédio</p>
+    <form id="form-stock" novalidate>
+      <input type="hidden" id="stock-id" value=""> 
+      
+      <div class="form-group mb-4">
+        <label class="form-label" for="stock-qty">Nova Quantidade <span class="form-required">*</span></label>
+        <input class="input" id="stock-qty" name="quantity" type="number" min="0" required/>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline btn-sm" onclick="fecharModal('modal-stock')">Cancelar</button>
+        <button type="submit" class="btn btn-primary btn-sm">Salvar Estoque</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="modal-overlay hidden" id="modal-confirm" role="dialog" aria-modal="true" aria-labelledby="confirm-title">
+  <div class="modal modal-sm">
+    <div class="modal-header">
+      <h2 class="modal-title" id="confirm-title">Confirmar Exclusão</h2>
+      <button class="modal-close" onclick="fecharModal('modal-confirm')" aria-label="Fechar">✕</button>
+    </div>
+    <input type="hidden" id="delete-id" value="">
+
+    <p class="text-sm text-gray-700 mb-2">
+      Tem certeza que deseja excluir o medicamento <strong id="delete-med-name">Nome</strong>?
+    </p>
+    <p class="text-sm text-red-600">Esta ação não pode ser desfeita.</p>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-outline btn-sm" onclick="fecharModal('modal-confirm')">Cancelar</button>
+      <button type="button" id="btn-confirm-delete" class="btn btn-danger btn-sm">Excluir</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/admin-medications.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Login — Medicamentos de Alto Custo</title>
+  <link rel="stylesheet" href="css/style.css"/>
+</head>
+<body>
+
+<main class="auth-page">
+  <div class="auth-box fade-in-up">
+
+    <div class="card auth-card">
+      <h1 class="auth-title">Medicamentos de Alto Custo</h1>
+      <p class="auth-city">São José do Rio Preto — SP</p>
+
+      <!-- Separador -->
+      <div class="or-separator">
+        <div class="or-line"></div>
+        <span class="or-text">acesso de demonstração</span>
+        <div class="or-line"></div>
+      </div>
+
+      <!-- Formulário demo -->
+      <form id="form-login" novalidate>
+        <div class="flex flex-col gap-4">
+
+          <div class="form-group">
+            <label class="form-label" for="usuario">CPF</label>
+            <input class="input" id="usuario" name="usuario" type="text" placeholder="000.000.000-00" maxlength="14" autocomplete="off" required/>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="senha">Senha</label>
+            <input class="input" id="senha" name="senha" type="password"
+              placeholder="••••••••" autocomplete="current-password" required/>
+          </div>
+
+          <!-- Área para mensagem de erro (preenchida via JS/back) -->
+          <div class="alert alert-danger hidden" role="alert" id="login-error">
+            <span class="alert-icon" aria-hidden="true">⚠️</span>
+            <span>Usuário ou senha inválidos.</span>
+          </div>
+
+          <button type="submit" class="btn btn-primary btn-md btn-block">
+            Acessar
+          </button>
+        </div>
+      </form>
+
+      <div class="text-center mt-6 pt-4" style="border-top: 1px solid var(--gray-200);">
+      <p class="text-sm text-gray-600">
+        Ainda não tem cadastro? 
+        <a href="register.html" class="font-semibold text-blue-900" style="text-decoration: underline;">
+          Crie sua conta aqui
+        </a>
+      </p>
+    </div>
+
+      <div class="auth-note">
+        <strong>Primeira vez aqui?</strong>
+        Você será redirecionado para completar seu cadastro após o primeiro login.
+      </div>
+
+      <p class="text-xs text-gray-400 text-center mt-4">
+        Esta plataforma utiliza autenticação oficial do GOV.BR.
+      </p>
+    </div>
+
+    <p class="text-center mt-4">
+      <a href="index.html" class="btn btn-outline btn-sm">← Voltar ao início</a>
+    </p>
+
+  </div>
+</main>
+
+<script src="js/login.js"></script>
+</body>
+</html>

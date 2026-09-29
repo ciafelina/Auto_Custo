@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Painel de controle — Medicamentos de Alto Custo</title>
+  <link rel="stylesheet" href="css/style.css"/>
+</head>
+<body>
+
+<div id="mob-overlay" aria-hidden="true"></div>
+
+<!-- ═══ SIDEBAR ═══ -->
+<nav id="sidebar" aria-label="Navegação lateral">
+  <div class="sidebar-header">
+    <div>
+      <div class="sidebar-logo">Medicamentos</div>
+      <div class="sidebar-tagline">Alto Custo — SJRP</div>
+    </div>
+  </div>
+
+  <div class="nav-section">
+    <p class="nav-section-label">Geral</p>
+    <a class="nav-item active" href="patient-dashboard.html" aria-current="page">
+      <span class="nav-icon" aria-hidden="true">📊</span> Painel de controle
+    </a>
+  </div>
+
+  <div class="nav-section">
+    <p class="nav-section-label">Medicamentos</p>
+    <a class="nav-item" href="stock.html">
+      <span class="nav-icon" aria-hidden="true">📦</span> Consultar Estoque
+    </a>
+    
+  </div>
+
+
+  <div class="sidebar-footer">
+    <button class="user-chip" onclick="window.location.href='profile.html'" aria-label="Ir para perfil">
+      <div class="avatar" id="sidebar-avatar" aria-hidden="true">--</div>
+      <div class="min-w-0">
+        <div class="user-name truncate" id="sidebar-user-name">Carregando...</div>
+        <div class="user-role">Paciente</div>
+      </div>
+    </button>
+    <a href="#" onclick="sairDaConta(event)" class="btn btn-outline btn-sm btn-block mt-2"
+      style="color:var(--red-600);border-color:var(--red-300)">Sair da Conta</a>
+  </div>
+  
+</nav>
+
+<!-- ═══ TOPBAR ═══ -->
+<header id="topbar" role="banner">
+  <button id="hamburger" aria-label="Abrir menu" aria-expanded="false" aria-controls="sidebar">☰</button>
+  <span id="page-title">Painel de controle</span>
+  <div style="flex:1"></div>
+  <time id="data-atual" class="text-sm text-gray-500"></time>
+</header>
+
+<!-- ═══ MAIN ═══ -->
+<main id="main">
+
+  <div class="page-header">
+    <div class="page-header-text">
+      <h1 class="text-blue-900">Bem-vindo, <span id="welcome-name">Usuário</span>!</h1>
+      <p>Acompanhe suas solicitações de medicamentos</p>
+    </div>
+    <button class="btn btn-primary btn-sm" onclick="window.location.reload()">↻ Atualizar</button>
+  </div>
+
+  <div class="grid grid-4 gap-4 mb-8">
+    <article class="card stat-card">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="stat-label">Total de Solicitações</p>
+          <p class="stat-value text-blue-900" id="stats-total">0</p>
+        </div>
+        <span class="stat-icon" aria-hidden="true">🛒</span>
+      </div>
+    </article>
+
+    <article class="card stat-card">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="stat-label">Pendentes</p>
+          <p class="stat-value text-orange-600" id="stats-pendente">0</p>
+        </div>
+        <span class="stat-icon" aria-hidden="true">⏳</span>
+      </div>
+    </article>
+
+    <article class="card stat-card">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="stat-label">Aprovadas</p>
+          <p class="stat-value text-blue-600" id="stats-aprovado">0</p>
+        </div>
+        <span class="stat-icon" aria-hidden="true">✅</span>
+      </div>
+    </article>
+
+    <article class="card stat-card">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="stat-label">Reprovadas</p>
+          <p class="stat-value text-red-600" id="stats-reprovado">0</p>
+        </div>
+        <span class="stat-icon" aria-hidden="true">❌</span>
+      </div>
+    </article>
+  </div>
+
+  <section aria-labelledby="req-title">
+    <h2 id="req-title" class="text-blue-900 mb-6">Histórico de Solicitações</h2>
+
+    <div id="lista-solicitacoes">
+        <p class="text-gray-500">Carregando solicitações...</p>
+    </div>
+
+    <div class="flex items-center justify-between mt-6 card p-4">
+        <button id="btn-prev" class="btn btn-secondary btn-sm" disabled>← Anterior</button>
+        <span class="text-sm font-semibold text-gray-600">
+            Página <span id="lbl-page">1</span>
+        </span>
+        <button id="btn-next" class="btn btn-secondary btn-sm">Próxima →</button>
+    </div>
+  </section>
+
+  <div class="cta-banner mt-8">
+    <div>
+      <h3 class="text-blue-900" style="font-size:1.1rem;margin-bottom:.25rem">
+        Precisa de um medicamento?
+      </h3>
+      <p class="text-sm text-gray-600">Consulte nosso catálogo e faça sua solicitação.</p>
+    </div>
+    <a href="stock.html" class="btn btn-primary btn-md">Consultar Estoque</a>
+  </div>
+
+</main>
+
+<script src="js/dashboard.js"></script>
+
+</body>
+</html>
