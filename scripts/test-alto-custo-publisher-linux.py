@@ -23,8 +23,8 @@ try:
         shutil.copyfile(path,scratch/('tests' if name.startswith('test_') else 'scripts')/name)
     result=subprocess.run(['python3',str(scratch/'tests/test_alto_custo_static_publish.py')],capture_output=True,text=True,timeout=40)
     match=re.search(r'Ran (\d+) tests',result.stderr)
-    passed=result.returncode==0 and match and int(match[1])==10 and 'skipped=' not in result.stderr
-    print(json.dumps({'nativeLinux':True,'exitCode':result.returncode,'allTenPassed':bool(passed),
+    passed=result.returncode==0 and match and int(match[1])>=10 and 'skipped=' not in result.stderr
+    print(json.dumps({'nativeLinux':True,'exitCode':result.returncode,'allPassed':bool(passed),'testCount':int(match[1]) if match else 0,
           'moduleHash':hashes['alto_custo_static_remote.py'],'testHash':hashes['test_alto_custo_static_publish.py'],
           'output':result.stderr,'productionServiceCalls':False}))
 finally:
@@ -48,6 +48,6 @@ try:
     result=json.loads(text)
     output=ROOT/'tests/.build/alto-custo-publication/native-tests.json';output.parent.mkdir(parents=True,exist_ok=True);output.write_text(json.dumps(result,indent=2),encoding='utf-8')
     print(json.dumps({k:v for k,v in result.items() if k!='output'}))
-    if not result['allTenPassed']:
+    if not result['allPassed']:
         print(result['output']);raise SystemExit(1)
 finally:client.close()

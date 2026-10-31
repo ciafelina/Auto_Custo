@@ -27,7 +27,7 @@ dependency=ROOT/'scripts/autocusto_domain_remote.py'
 manifest_path=OUTPUT/'release.json'
 if action=='activate':
     native=json.loads((OUTPUT/'native-tests.json').read_text())
-    assert native['allTenPassed'] and native['nativeLinux'] and native['exitCode']==0
+    assert native['allPassed'] and native['nativeLinux'] and native['exitCode']==0
     assert native['moduleHash']==hashlib.sha256(module.read_bytes()).hexdigest(),'Repeat the native Linux tests after changing the publisher.'
     assert subprocess.run(['git','diff','--quiet','HEAD','--','Front_End'],cwd=ROOT).returncode==0,'Commit the validated frontend before publishing.'
     frontend=ROOT/'Front_End'
@@ -123,20 +123,10 @@ try:
         manifest=json.loads((scratch/'release.json').read_text())
         files=publisher.load_bundle(scratch/'frontend.tar.gz',manifest)
         result=publisher.activate(paths,manifest,files,invoke=invoke,verify=verify,observe=observe)
-        publisher.write(active_file,json.dumps({'manifest':manifest,'result':result}).encode(),0o600)
         result['azureConfigurationPreserved']=True
     elif action=='rollback':
-        active=json.loads(active_file.read_text());assert not active.get('rolledBack')
-        manifest=active['manifest'];publisher.validate_manifest(manifest)
-        public=paths.public/manifest['releaseId']
-        assert ('root '+str(public)+';') in paths.old_config.read_text() and ('root '+str(public)+';') in paths.new_config.read_text()
-        backup=paths.backups/('static-'+manifest['releaseId'])
-        assert backup.resolve().parent==paths.backups.resolve()
-        state=json.loads((backup/'state.json').read_text())
-        before=observe();publisher.restore(paths,state,invoke)
-        assert observe()==before
-        active['rolledBack']=True;publisher.write(active_file,json.dumps(active).encode(),0o600)
-        result={'staticRollbackComplete':True,'apiStatePreserved':True,'azureConfigurationPreserved':True}
+        result=publisher.recover(paths,invoke=invoke,observe=observe)
+        result['azureConfigurationPreserved']=True
     elif action=='renewal-test':
         before=observe()
         invoke(['/opt/autocusto-certbot/bin/certbot','renew','--cert-name','altocusto-domain','--dry-run','--run-deploy-hooks'],timeout=240)
@@ -147,7 +137,7 @@ try:
         result={'apiActive':True,'azureConfigurationStrict':True,
                 'newTimerEnabled':invoke(['systemctl','is-enabled',publisher.TIMER],must=False),
                 'newTimerActive':invoke(['systemctl','is-active',publisher.TIMER],must=False),
-                'activeRelease':json.loads(active_file.read_text())['manifest']['releaseId'] if active_file.exists() else None}
+                **publisher.publication_state(paths)}
     print(json.dumps(result),flush=True)
 finally:
     assert scratch.resolve().parent==base.resolve() and scratch.name=='exec-'+stage.name

@@ -9,6 +9,7 @@ import sys
 import tarfile
 import tempfile
 import unittest
+from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'scripts'))
@@ -172,6 +173,56 @@ class PublishTests(unittest.TestCase):
         self.assertEqual(self.paths.renew_timer.read_bytes(),b'old-timer')
         self.assertIn(('systemctl','enable',module.TIMER),self.calls)
         self.assertIn(('systemctl','start',module.TIMER),self.calls)
+
+    @unittest.skipIf(os.name=='nt','Transactional activation is verified natively on Linux.')
+    def test_failed_publication_record_rolls_back_traffic_and_previous_record(self):
+        record=self.paths.backups/'active-static.json'
+        record.parent.mkdir(parents=True,exist_ok=True)
+        record.write_bytes(b'previous-record')
+        real_write=module.write
+        injected=False
+        def write(path,body,mode=0o644):
+            nonlocal injected
+            if path==record and not injected:
+                injected=True
+                raise OSError('record-write-failed')
+            return real_write(path,body,mode)
+        with patch.object(module,'write',side_effect=write):
+            with self.assertRaisesRegex(OSError,'record-write-failed'):self.activate()
+        self.assertEqual(record.read_bytes(),b'previous-record')
+        self.assertEqual(self.paths.old_config.read_bytes(),b'original-sentinel')
+        self.assertEqual(self.paths.new_config.read_bytes(),b'original-sentinel')
+        self.assertFalse((self.paths.backups/'pending-static.json').exists())
+
+    @unittest.skipIf(os.name=='nt','Interrupted activation recovery is verified natively on Linux.')
+    def test_interrupted_activation_is_recoverable_from_pending_record(self):
+        def interrupted(*_):raise KeyboardInterrupt('simulated-hard-stop')
+        with self.assertRaises(KeyboardInterrupt):self.activate(verify=interrupted)
+        pending=self.paths.backups/'pending-static.json'
+        self.assertTrue(pending.is_file(),'Recovery pointer must precede traffic changes.')
+        result=module.recover(self.paths,invoke=self.invoke,observe=lambda:{'api':'unchanged'})
+        self.assertTrue(result['staticRollbackComplete'])
+        self.assertFalse(pending.exists())
+        self.assertFalse((self.paths.backups/'active-static.json').exists())
+        self.assertEqual(self.paths.old_config.read_bytes(),b'original-sentinel')
+        self.assertEqual(self.paths.new_config.read_bytes(),b'original-sentinel')
+
+    @unittest.skipIf(os.name=='nt','POSIX file locking is verified natively on Linux.')
+    def test_concurrent_publication_is_rejected_without_changing_traffic(self):
+        self.assertTrue(callable(getattr(module,'publication_lock',None)))
+        with module.publication_lock(self.paths):
+            with self.assertRaisesRegex(RuntimeError,'publication in progress'):self.activate()
+        self.assertEqual(self.paths.old_config.read_bytes(),b'original-sentinel')
+        self.assertFalse((self.paths.public/self.manifest['releaseId']).exists())
+
+    def test_status_does_not_report_rolled_back_record_as_active(self):
+        record=self.paths.backups/'active-static.json'
+        record.parent.mkdir(parents=True,exist_ok=True)
+        record.write_text(json.dumps({'manifest':self.manifest,'rolledBack':True}),encoding='utf-8')
+        self.assertTrue(callable(getattr(module,'publication_state',None)))
+        state=module.publication_state(self.paths)
+        self.assertIsNone(state['activeRelease'])
+        self.assertTrue(state['rolledBack'])
 
 
 if __name__=='__main__':unittest.main(verbosity=2)
