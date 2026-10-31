@@ -43,7 +43,7 @@ for name,digest in hashes.items():
  p=stage/name;assert p.is_file() and not p.is_symlink() and hashlib.sha256(p.read_bytes()).hexdigest()==digest
  dest=work/('tests' if name.startswith('test_') else 'scripts')/name;shutil.copyfile(p,dest);dest.chmod(0o600)
 sys.path.insert(0,str(work/'scripts'))
-from password_recovery_publish import Publisher
+from password_recovery_publish import Publisher,wait_for_file
 from alto_custo_static_remote import load_bundle
 def invoke(argv):
  r=subprocess.run(argv,capture_output=True,text=True,timeout=40)
@@ -78,7 +78,7 @@ def verify(m):
  finally:db.close()
  for host in ['altocusto.duckdns.org','autocusto.duckdns.org']:
   for name in ['index.html','login.html','recuperar-senha.html','redefinir-senha.html','js/recuperacao-senha.js']:
-   code,data=get(host,'/' if name=='index.html' else '/'+name);assert code==200 and hashlib.sha256(data).hexdigest()==m['files'][name]
+   wait_for_file(lambda:get(host,'/' if name=='index.html' else '/'+name),m['files'][name])
   assert get(host,'/google6865db66f34119a6.html')[0]==200
   for _ in range(30):
    try:

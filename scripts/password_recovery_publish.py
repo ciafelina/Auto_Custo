@@ -1,5 +1,5 @@
 """Transactional activation of the tested recovery API/frontend; never rewrites Azure/JWT INI."""
-import base64, configparser, contextlib, fcntl, hashlib, io, json, os, pathlib, re, secrets, shutil
+import base64, configparser, contextlib, fcntl, hashlib, io, json, os, pathlib, re, secrets, shutil, time
 from alto_custo_static_remote import validate_files
 
 def atomic(path,body,mode=0o600):
@@ -13,6 +13,23 @@ def atomic(path,body,mode=0o600):
         if created and temp.exists():temp.unlink()
 
 def digest(path):return hashlib.sha256(path.read_bytes()).hexdigest()
+
+def _poll(read,ready,*,pause,attempts=100):
+    deadline=time.monotonic()+10
+    for _ in range(attempts):
+        try:
+            value=read()
+            if ready(value):return value
+        except (OSError,RuntimeError):pass
+        if time.monotonic()>=deadline:break
+        pause(.1)
+    raise RuntimeError('The new process or public files did not become ready within the verification window.')
+
+def wait_for_identity(observe,binary,binary_hash,*,pause=time.sleep):
+    return _poll(observe,lambda item:item['binary']==binary and item['binaryHash']==binary_hash,pause=pause)
+
+def wait_for_file(fetch,expected_hash,*,pause=time.sleep):
+    return _poll(fetch,lambda item:item[0]==200 and hashlib.sha256(item[1]).hexdigest()==expected_hash,pause=pause)
 
 class Publisher:
     def __init__(self,root=pathlib.Path('/')):
@@ -75,7 +92,7 @@ class Publisher:
             item=state['files'][str(path.relative_to(self.root))]
             atomic(path,base64.b64decode(item['rollback'] if path==self.unit else item['before']),0o644)
         invoke(['nginx','-t']);invoke(['systemctl','daemon-reload']);invoke(['systemctl','restart','autocusto.service']);invoke(['systemctl','reload','nginx'])
-        actual=observe();before=state['apiBefore']
+        before=state['apiBefore'];actual=wait_for_identity(observe,before['binary'],before['binaryHash'])
         assert all(actual[k]==before[k] for k in ('binary','binaryHash')),'Previous API identity not restored.'
         assert actual['config']==str(target) and actual['configHash']==state['rollbackConfig']['hash'],'Safe rollback configuration not loaded.'
         state['rolledBack']=True
@@ -126,7 +143,7 @@ class Publisher:
                     dest=public/name;dest.parent.mkdir(parents=True,exist_ok=True,mode=0o755);atomic(dest,body,0o644)
                 for path in self.files():atomic(path,base64.b64decode(state['files'][str(path.relative_to(self.root))]['after']),0o644)
                 invoke(['nginx','-t']);invoke(['systemctl','daemon-reload']);invoke(['systemctl','restart','autocusto.service'])
-                actual=observe();assert actual['binary']==new_binary and actual['binaryHash']==manifest['binaryHash']
+                actual=wait_for_identity(observe,new_binary,manifest['binaryHash'])
                 assert actual['config']==before['config'] and actual['configHash']==before['configHash']
                 invoke(['systemctl','reload','nginx']);checks=verify(manifest)
                 result={'releaseId':rid,'binary':new_binary,'public':str(public),'azureConfigurationPreserved':True,'checks':checks}

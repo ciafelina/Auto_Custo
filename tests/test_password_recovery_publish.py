@@ -76,5 +76,15 @@ class RecoveryPublication(unittest.TestCase):
   self.assertEqual(dest.read_bytes(),b'before');self.assertEqual(list(self.root.glob('*.recovery-*')),[])
   dest.with_name(dest.name+'.recovery-tmp').write_bytes(b'old interrupted attempt')
   deploy.atomic(dest,b'recovered');self.assertEqual(dest.read_bytes(),b'recovered')
+ def test_systemd_pre_exec_process_is_not_treated_as_started_api(self):
+  pending={'binary':'/usr/lib/systemd/systemd-executor','binaryHash':'pre-exec'}
+  ready={'binary':'/opt/autocusto/releases/new/ProjetoFaculdade','binaryHash':'expected'}
+  observations=iter([pending,ready]);pauses=[]
+  result=deploy.wait_for_identity(lambda:next(observations),ready['binary'],ready['binaryHash'],pause=pauses.append)
+  self.assertEqual(result,ready);self.assertEqual(len(pauses),1)
+ def test_previous_nginx_worker_can_finish_before_new_files_are_visible(self):
+  responses=iter([(200,b'previous frontend'),(200,b'new frontend')]);pauses=[]
+  result=deploy.wait_for_file(lambda:next(responses),hashlib.sha256(b'new frontend').hexdigest(),pause=pauses.append)
+  self.assertEqual(result,(200,b'new frontend'));self.assertEqual(len(pauses),1)
 
 if __name__=='__main__':unittest.main()
