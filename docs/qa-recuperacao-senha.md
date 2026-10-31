@@ -12,7 +12,7 @@ Executar com conta temporária de teste e e-mail acessível, preservando cadastr
 - [x] Simular fila cheia/configuração indisponível — não expor destinatários ou segredos.
 - [x] Testar ACBr no Linux com cadeia/hostname válidos e inválidos — aceitar somente TLS confiável e entregar o corpo com link.
 - [x] Enviar pelo Gmail configurado — servidor SMTP aceitar a mensagem; corpo identificado e sem senha atual/provisória.
-- [ ] Confirmar no Gmail do responsável se a mensagem chegou à caixa de entrada ou ao spam.
+- [x] Confirmar no Gmail do responsável se a mensagem chegou à caixa de entrada ou ao spam — recebimento na caixa de entrada confirmado pelo responsável.
 
 ## Redefinição e acesso
 
