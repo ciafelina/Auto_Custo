@@ -19,8 +19,8 @@ Situação conferida em 31/10/2026. Este texto distingue as melhorias entregues 
 - Há cadastro, login, consulta de estoque, solicitações, aprovação, retirada e acompanhamento pelo painel.
 - Há edição de perfil após autenticação. O login direciona para o painel correspondente ao cargo.
 - Recuperação automática de senha por e-mail e envio de notificações por e-mail **não foram implementados**. Não devem aparecer como funções entregues no relatório acadêmico.
-- A identificação de projeto acadêmico, autoria, ano e versão está sendo preparada. Não há comprovação de uma revisão jurídica completa de privacidade nesta entrega.
-- O nome pretendido para apresentação é **Alto Custo**. A troca do endereço atual para `altocusto.duckdns.org` ainda depende de cadastro no DuckDNS, HTTPS e validação.
+- A identificação de projeto acadêmico, autoria, ano e versão foi aplicada nos arquivos locais e passou nos testes; sua publicação está em preparação. Não há comprovação de uma revisão jurídica completa de privacidade nesta entrega.
+- O nome aprovado para apresentação é **Alto Custo**. `altocusto.duckdns.org` foi cadastrado na conta do usuário e apontado para a VM; sua entrada em operação ainda depende de HTTPS e validação.
 - O Google está sinalizando páginas do domínio atual por possível conteúdo enganoso. O certificado HTTPS foi validado e os arquivos publicados correspondem à versão conhecida, mas isso não elimina o alerta. O diagnóstico detalhado e eventual revisão dependem da comprovação de propriedade no Search Console. Até esclarecer a classificação, evitar novos cadastros com dados reais.
 
 ## Roteiro para José gravar o áudio

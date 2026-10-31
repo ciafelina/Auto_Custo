@@ -26,6 +26,7 @@ const browser = await playwright.chromium.launch({headless:true, executablePath}
 const results = [];
 let passed = 0, failed = 0;
 const filter = process.argv.includes('--review-checks');
+const identificationOnly = process.argv.includes('--identification-checks');
 
 function fixture(route, stock) {
   if (route === '/produtos') return {sucesso:true, resultado:{dados:[{...med, estoque:stock}], total_registros:1}};
@@ -94,6 +95,7 @@ async function open(file, {theme, colorScheme='light', width=1440, role=1, block
 
 async function check(label, file, fn, options) {
   if (filter && !label.startsWith('revisão:')) return;
+  if (identificationOnly && !label.startsWith('identificação:')) return;
   let scope;
   try {
     scope = await open(file, options);
@@ -126,6 +128,51 @@ function contrast(foreground, background) {
 }
 
 try {
+  // Catches incorrect page identity after a viewport change, rather than a CSS-only failure.
+  await check('identificação: estoque conserva o título correto ao redimensionar', 'stock.html', async ({page}) => {
+    for (const width of [1440, 1024, 768, 375, 1440, 375]) {
+      await page.setViewportSize({width, height:900});
+      assert.equal((await page.locator('#page-title').innerText()).trim(), 'Consulta de Estoque');
+      assert.equal(await page.locator('#page-title').isVisible(), true);
+      assert.equal((await page.locator('h1').innerText()).trim(), 'Consulta de Estoque');
+    }
+  }, {role:3});
+  for (const file of ['stock.html', 'profile.html']) await check('identificação: menu do paciente leva ao Painel de controle em '+file, file, async ({page}) => {
+    await page.locator('#hamburger').click();
+    const link = page.locator('#menu-paciente a[href="patient-dashboard.html"]');
+    assert.match(await link.innerText(), /Painel de controle/);
+    await link.click();
+    await page.waitForURL('**/patient-dashboard.html');
+    assert.equal((await page.locator('#page-title').innerText()).trim(), 'Painel de controle');
+  }, {role:3, width:375});
+  for (const file of pages) await check('identificação: crédito legível sem rolagem lateral em '+file, file, async ({page}) => {
+    const credit = page.locator('.project-credit').last();
+    assert.equal(await credit.count(), 1, 'Identificação do projeto precisa aparecer na tela.');
+    for (const theme of ['light', 'dark']) {
+      if (await page.locator('#alternar-tema').getAttribute('aria-pressed') !== String(theme === 'dark')) {
+        await page.locator('#alternar-tema').click();
+      }
+      await themeIs(page, theme);
+      for (const width of [375, 768, 1024, 1440]) {
+        await page.setViewportSize({width, height:900});
+        await credit.scrollIntoViewIfNeeded();
+        assert.equal(await credit.isVisible(), true);
+        const colors = await credit.evaluate(element => {
+          let parent = element;
+          let background = 'rgba(0, 0, 0, 0)';
+          while (parent) {
+            background = getComputedStyle(parent).backgroundColor;
+            if (background !== 'transparent' && background !== 'rgba(0, 0, 0, 0)') break;
+            parent = parent.parentElement;
+          }
+          return {text:getComputedStyle(element).color, background};
+        });
+        assert.ok(contrast(colors.text, colors.background) >= 4.5, theme+' '+width+': crédito com baixo contraste');
+        const dimensions = await page.evaluate(() => ({scroll:document.documentElement.scrollWidth, width:innerWidth}));
+        assert.ok(dimensions.scroll <= dimensions.width + 1, file+' '+theme+' '+width+': rolagem lateral');
+      }
+    }
+  });
   for (const file of pages) {
     await check('tema e atalho em '+file, file, async ({page}) => {
       await themeIs(page, 'light');

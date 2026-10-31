@@ -529,6 +529,13 @@ PÁGINAS PÚBLICAS (index, login, register)
 .pub-footer p { opacity:.9; }
 .footer-sub   { color:#bfdbfe; margin-top:.5rem; }
 .footer-copy  { color:#93c5fd; margin-top:1rem; font-size:.8rem; }
+.project-credit, .project-intro {
+  color:var(--text-muted); font-size:.82rem; line-height:1.65;
+  text-align:center; overflow-wrap:anywhere; max-width:100%;
+}
+.project-credit { margin-top:1.5rem; padding-block:.75rem; }
+.project-intro { margin:1rem auto; max-width:38rem; }
+.pub-footer .project-credit { color:#fff; }
 
 /* Auth pages (login / register) */
 .auth-page   { min-height:100vh; display:flex; align-items:center; justify-content:center; background:var(--bg-page); padding:1rem; }
