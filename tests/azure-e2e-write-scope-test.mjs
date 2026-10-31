@@ -1,0 +1,18 @@
+import assert from 'node:assert/strict';
+import {allowTestWrite} from './azure-e2e-write-scope.mjs';
+const plan={actors:[{cpf:'00012345678',name:'TEST_ACCOUNT',email:'qa@example.invalid'}],medicineName:'TEST_MEDICINE',marker:'TEST'};
+const owned={medicineId:991,requests:new Set([552])};
+const base='https://autocusto.duckdns.org/api';
+const check=(route,method,body)=>allowTestWrite(plan,owned,base+route,method,body);
+check('/login','POST',{cpf:plan.actors[0].cpf});
+check('/usuarios','POST',{cpf:plan.actors[0].cpf,nomeCompleto:'TEST_ACCOUNT',email:'qa@example.invalid'});
+check('/solicitacoes','POST',{cpf:plan.actors[0].cpf,idMedicamento:991,quantidade:2});
+check('/admin/solicitacoes/552/status','PATCH',{status:'Aprovado'});
+check('/solicitacoes/552/retirada','PATCH');
+assert.throws(()=>check('/usuarios','POST',{cpf:plan.actors[0].cpf,nomeCompleto:'Real account',email:'real@example.com'}));
+assert.throws(()=>check('/solicitacoes','POST',{idMedicamento:99,quantidade:2}));
+assert.throws(()=>check('/admin/medicamentos/99','DELETE'));
+assert.throws(()=>check('/admin/solicitacoes/99/status','PATCH',{status:'Aprovado'}));
+assert.throws(()=>check('/perfil/12345678901','DELETE'));
+assert.throws(()=>allowTestWrite(plan,owned,'https://other.example/api/solicitacoes','POST',{idMedicamento:991}));
+console.log('HTTP safety: 5 owned writes accepted and 6 external/mismatched writes rejected.');

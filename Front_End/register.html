@@ -4,11 +4,13 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Completar Cadastro — Medicamentos de Alto Custo</title>
+  <script src="js/theme.js"></script>
   <link rel="stylesheet" href="css/style.css"/>
 </head>
 <body>
+<a class="skip-link" href="#main-content">Pular para o conteúdo principal</a>
 
-<main class="auth-page">
+<main class="auth-page" id="main-content" tabindex="-1">
   <div class="auth-box-lg fade-in-up">
 
     <header class="card" style="padding:1rem 1.5rem;margin-bottom:1rem;display:flex;align-items:center;justify-content:space-between">
@@ -44,8 +46,8 @@
               CPF <span class="form-required" aria-hidden="true">*</span>
             </label>
             <input class="input" id="r-cpf" name="cpf" type="text"
-              placeholder="000.000.000-00" maxlength="14" autocomplete="off" required/>
-            <p id="cpf-error" class="text-sm text-red-600 hidden mt-1" style="font-weight: 600;">CPF inválido. Verifique os números digitados.</p>
+              placeholder="000.000.000-00" maxlength="14" inputmode="numeric" autocomplete="off" aria-describedby="cpf-error" required/>
+            <p id="cpf-error" role="alert" class="text-sm text-red-600 hidden mt-1" style="font-weight: 600;">CPF inválido. Verifique os números digitados.</p>
           </div>
 
           <div class="grid grid-2 gap-4">
@@ -130,6 +132,10 @@
 
   </div>
 </main>
+<script src="config.js"></script>
+<script src="js/api-client.js"></script>
+<script src="js/api-response.js"></script>
 <script src="js/register.js"></script>
+<script src="js/accessibility.js"></script>
 </body>
 </html>

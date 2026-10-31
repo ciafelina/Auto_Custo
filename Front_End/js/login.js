@@ -27,7 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
     errorDiv.classList.add('hidden');
 
     try {
-      const response = await fetch('http://localhost:9000/login', {
+      const response = await fetch(Api.url('/login'), {
           method: 'POST',
           headers: {
               'Content-Type': 'application/json' 
@@ -45,8 +45,7 @@ document.addEventListener('DOMContentLoaded', () => {
       try {
           data = JSON.parse(responseText);
       } catch (e) {
-          // Caso não seja um JSON válido, joga o texto puro para a propriedade de mensagem
-          data = { sucesso: false, mensagem: responseText };
+          data = { sucesso: false, mensagem: 'Não foi possível ler a resposta do servidor. Tente novamente.' };
       }
 
       if (response.ok && data.sucesso) {
@@ -66,18 +65,7 @@ document.addEventListener('DOMContentLoaded', () => {
       } else {
         errorDiv.classList.remove('hidden');
         
-        // Faz a varredura das possíveis estruturas de erro enviadas pela API
-        let msgErro = 'CPF ou senha inválidos.';
-        
-        if (data.mensagem) {
-            msgErro = data.mensagem;
-        } else if (data.error) {
-            if (typeof data.error === 'string') msgErro = data.error;
-            else if (data.error.message) msgErro = data.error.message;
-            else if (data.error.mensagem) msgErro = data.error.mensagem;
-        }
-        
-        errorSpan.textContent = msgErro;
+        errorSpan.textContent = RespostaApi.mensagemErro(data, 'Não foi possível entrar. Tente novamente.');
       }
 
     } catch (error) {

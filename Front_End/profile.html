@@ -4,9 +4,11 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Meu Perfil — Medicamentos de Alto Custo</title>
+  <script src="js/theme.js"></script>
   <link rel="stylesheet" href="css/style.css"/>
 </head>
 <body>
+<a class="skip-link" href="#main-content">Pular para o conteúdo principal</a>
 
 <div id="mob-overlay" aria-hidden="true"></div>
 
@@ -79,7 +81,7 @@
   <div style="flex:1"></div>
 </header>
 
-<main id="main">
+<main id="main" tabindex="-1"><span id="main-content" tabindex="-1"></span>
 
   <div class="page-header">
     <div class="page-header-text">
@@ -162,7 +164,7 @@
               placeholder="Alergias, condições médicas, medicamentos em uso…"></textarea>
           </div>
 
-          <div class="form-group mt-4 p-4 border border-gray-200" style="border-radius: var(--radius); background-color: #f8fafc;">
+          <div class="form-group mt-4 p-4 border border-gray-200" style="border-radius: var(--radius); background-color: var(--bg-subtle);">
             <label class="form-label" for="pe-pass">Trocar Senha (Opcional)</label>
             <input class="input" id="pe-pass" type="password" placeholder="Digite a nova senha"/>
             <p class="form-hint mt-1">Deixe em branco se não quiser alterar sua senha atual.</p>
@@ -180,19 +182,23 @@
       </form>
     </section>
 
-    <section class="card p-8 border border-red-200" aria-labelledby="delete-title" style="background-color: #fffafb;">
+    <section class="card p-8 border border-red-200" aria-labelledby="delete-title" style="background-color: var(--red-50);">
       <h2 id="delete-title" class="text-red-600 mb-2" style="font-size:1.1rem">Excluir Conta</h2>
       <p class="text-sm text-gray-600 mb-4">
-        <strong>Atenção:</strong> Ao excluir sua conta, você perderá o acesso ao sistema e todo o seu histórico. Esta ação é irreversível.
+        <strong>Atenção:</strong> Só é possível excluir contas sem solicitações. Contas com histórico são preservadas; para encerrar o acesso mantendo os registros, procure a administração.
       </p>
       <button onclick="excluirConta()" class="btn btn-danger btn-sm btn-block mt-2">
-        🗑️ Excluir Minha Conta Definitivamente
+        🗑️ Excluir Minha Conta
       </button>
     </section>
 
   </div>
 </main>
 
+<script src="config.js"></script>
+<script src="js/api-client.js"></script>
+<script src="js/api-response.js"></script>
 <script src="js/profile.js"></script>
+<script src="js/accessibility.js"></script>
 </body>
 </html>

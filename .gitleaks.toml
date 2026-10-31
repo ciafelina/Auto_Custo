@@ -1,0 +1,39 @@
+title = "AutoCusto - verificacao de segredos"
+
+[extend]
+useDefault = true
+
+[[rules]]
+id = "autocusto-pascal-secret"
+description = "Senha ou chave JWT literal em constante Pascal"
+regex = "(?i)\\bc_(?:senha_\\w+|jwt_secret)\\s*=\\s*'([^'\\r\\n]{4,})'"
+secretGroup = 1
+
+[[rules.allowlists]]
+description = "Marcador sem credencial usado somente no historico saneado"
+regexTarget = "secret"
+regexes = ['''^REMOVIDO_DO_HISTORICO$''']
+
+[[allowlists]]
+description = "Biblioteca identifica o cabecalho PEM; estas linhas nao contem uma chave"
+targetRules = ["private-key"]
+condition = "AND"
+paths = ['''(?:^|/)modules/delphi-jose-jwt/Source/Common/JOSE\.Signing\.Base\.pas$''']
+regexTarget = "line"
+regexes = ['''FPEM_PRVKEY_PKCS[18] := TEncoding\.ASCII\.GetBytes\('-----BEGIN (?:EC )?PRIVATE KEY-----'\);''']
+
+[[allowlists]]
+description = "Endereco reservado de API ficticia, usado como expectativa literal"
+targetRules = ["generic-api-key"]
+condition = "AND"
+paths = ['''(?:^|/)tests/api-config\.mjs$''']
+regexTarget = "line"
+regexes = ["apiBaseUrl:'https://api\\.example\\.test:9443/farmacia/v1/'"]
+
+[[allowlists]]
+description = "Senha publica e exclusiva do banco descartavel de integracao"
+targetRules = ["generic-api-key"]
+condition = "AND"
+paths = ['''(?:^|/)tests/sqlserver-integration\.mjs$''']
+regexTarget = "secret"
+regexes = ['''^senha-ficticia-integracao-2026$''']

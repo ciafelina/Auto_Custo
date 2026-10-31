@@ -1,9 +1,9 @@
-unit Controlador_Dashboard;
+﻿unit Controlador_Dashboard;
 
 interface
 
 uses
-  Horse, System.JSON, System.SysUtils, Excecoes, Mensagens, Servico_Dashboard;
+  Horse, System.JSON, System.SysUtils, Excecoes, Mensagens, Servico_Dashboard, Autenticacao;
 
 type
   TControladorDashbord = class
@@ -19,6 +19,8 @@ var
   LPage, LLimit: Integer;
 begin
   LCPF := Req.Params['cpf'];
+  ExigirTitular(Req, LCPF);
+  LCPF := ValidarToken(Req).UsuarioCPF;
 
   LPage := StrToIntDef(Req.Query['page'], 1);
   LLimit := StrToIntDef(Req.Query['limit'], 5);
@@ -38,7 +40,7 @@ begin
   Res.Status(200).Send(
     TJSONObject.Create
       .AddPair('sucesso', TJSONBool.Create(True))
-      // Chama o servi�o do Admin que acabamos de criar
+      // Chama o serviço do Admin que acabamos de criar
       .AddPair('dados', TServicoDashboard.ObterDadosAdmin)
   );
 end;

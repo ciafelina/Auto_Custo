@@ -1,4 +1,4 @@
-unit Controlador_Login;
+Ôªøunit Controlador_Login;
 
 interface
 
@@ -14,6 +14,8 @@ type
 
 implementation
 
+uses JsonApi;
+
 
 { TControladorAutenticacao }
 
@@ -25,19 +27,13 @@ var
   LTokenJWTString: string;
   LIdentificador, LSenha: string;
 begin
-  try // <-- Captura qualquer erro de validaÁ„o ou status inativo
-    try
-      LBody := Req.Body<TJSONObject>;
-    except
-      on E: Exception do
-        raise EErroApi.Create(400, TCodigoErro.RequisicaoInvalida, 'Formato JSON inv·lido.');
-    end;
-    if (not Assigned(LBody)) or (LBody.Count = 0) then
-      raise EErroApi.Create(400, TCodigoErro.RequisicaoInvalida, 'O corpo da requisiÁ„o n„o pode estar vazio.');
-    LIdentificador := LBody.GetValue<string>('cpf', '');
-    LSenha         := LBody.GetValue<string>('senha', '');
-    if LIdentificador = '' then raise EErroApi.Create(400, TCodigoErro.ParametroAusente, 'CPF n„o informado.');
-    if LSenha = '' then raise EErroApi.Create(400, TCodigoErro.ParametroAusente, 'Senha n„o informada.');
+    LBody := LerObjetoJSON(Req);
+    if LBody.Count = 0 then
+      raise EErroApi.Create(400, TCodigoErro.RequisicaoInvalida, 'O corpo da requisi√ß√£o n√£o pode estar vazio.');
+    LIdentificador := LerTextoJSON(LBody, 'cpf');
+    LSenha         := LerTextoJSON(LBody, 'senha');
+    if LIdentificador = '' then raise EErroApi.Create(400, TCodigoErro.ParametroAusente, 'CPF n√£o informado.');
+    if LSenha = '' then raise EErroApi.Create(400, TCodigoErro.ParametroAusente, 'Senha n√£o informada.');
     LResult := TServicoAutenticacao.RealizarLogin(LIdentificador, LSenha);
     LJWT := TJWT.Create;
     try
@@ -46,30 +42,21 @@ begin
       LJWT.Claims.SetClaimOfType<string>('cpf', LResult.UsuarioCPF);
       LJWT.Claims.SetClaimOfType<string>('nome', LResult.NomeUsuario);
       LJWT.Claims.SetClaimOfType<Integer>('cargo', LResult.IdCargo);
-      LTokenJWTString := TJOSE.SHA256CompactToken(c_jwt_secret, LJWT);
+      LTokenJWTString := TJOSE.SHA256CompactToken(ObterChaveJWT, LJWT);
     finally
       LJWT.Free;
     end;
-    // Retorno em caso de sucesso completo
     Res.Status(200).Send(
-      '{' +
-      '  "sucesso": true,' +
-      '  "dados": {' +
-      '    "token_jwt": "' + LTokenJWTString + '",' +
-      '    "tipo": "Bearer",' +
-      '    "expira_em": 28800,' +
-      '    "nome": "' + LResult.NomeUsuario + '",' +
-      '    "cpf": "' + LResult.UsuarioCPF + '",' +
-      '    "cargo": ' + IntToStr(LResult.IdCargo) +
-      '  }' +
-      '}'
+      TJSONObject.Create
+        .AddPair('sucesso', TJSONBool.Create(True))
+        .AddPair('dados', TJSONObject.Create
+          .AddPair('token_jwt', LTokenJWTString)
+          .AddPair('tipo', 'Bearer')
+          .AddPair('expira_em', TJSONNumber.Create(28800))
+          .AddPair('nome', LResult.NomeUsuario)
+          .AddPair('cpf', LResult.UsuarioCPF)
+          .AddPair('cargo', TJSONNumber.Create(LResult.IdCargo)))
     );
-  except
-    on E: Exception do
-    begin
-      Res.Status(401).Send('{"sucesso": false, "mensagem": "' + E.Message + '"}');
-    end;
-  end;
 end;
 
 class procedure TControladorAutenticacao.RegistrarRotas;

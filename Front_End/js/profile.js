@@ -1,4 +1,4 @@
-document.addEventListener('DOMContentLoaded', async () => {
+﻿document.addEventListener('DOMContentLoaded', async () => {
     const token = localStorage.getItem('token_jwt');
     const cpfCru = localStorage.getItem('usuario_cpf');
 
@@ -34,8 +34,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         menuAdmin.classList.remove('hidden');
         btnVoltar.href = 'admin-dashboard.html';
         
+        document.getElementById('link-usuarios').classList.remove('hidden');
         if (cargo === 1) {
-            document.getElementById('link-usuarios').classList.remove('hidden'); 
             lblCargoSidebar.textContent = 'Administrador';
             badgeCargoPerfil.textContent = 'Administrador';
             badgeCargoPerfil.className = 'badge badge-approved'; 
@@ -69,7 +69,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         };
 
         try {
-            const response = await fetch(`http://localhost:9000/perfil/${cpf}`, {
+            const response = await fetch(Api.url(`/perfil/${cpf}`), {
                 method: 'PUT',
                 headers: {
                     'Authorization': `Bearer ${token}`,
@@ -84,7 +84,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 document.getElementById('view-section').classList.remove('hidden');
                 await carregarDadosPerfil();
             } else {
-                const erroMsg = await response.text();
+                const erroMsg = await RespostaApi.lerErro(response);
                 alert('Erro ao atualizar perfil: ' + erroMsg);
             }
         } catch (error) {
@@ -100,16 +100,16 @@ async function carregarDadosPerfil() {
     const cpf = cpfCru ? cpfCru.replace(/\D/g, '') : '';
 
     try {
-        const response = await fetch(`http://localhost:9000/perfil/${cpf}`, {
+        const response = await fetch(Api.url(`/perfil/${cpf}`), {
             method: 'GET',
             headers: { 'Authorization': `Bearer ${token}` }
         });
 
         // BLINDAGEM 1: Se a API der um Erro 500 ou 404, ele avisa na tela e não trava!
         if (!response.ok) {
-            const errorText = await response.text();
+            const errorText = await RespostaApi.lerErro(response);
             document.getElementById('p-nome').textContent = 'Erro no Servidor';
-            alert(`O Servidor Delphi retornou um erro (Status ${response.status}):\n\n${errorText}`);
+            alert('Não foi possível carregar o perfil: ' + errorText);
             return;
         }
 
@@ -154,15 +154,15 @@ async function carregarDadosPerfil() {
             document.getElementById('pe-health').value = user.dadosSaude || '';
             document.getElementById('pe-pass').value = '';
         } else {
-            console.error("Erro da API:", result.mensagem);
+            console.error("Erro da API:", RespostaApi.mensagemErro(result));
             document.getElementById('p-nome').textContent = 'Erro ao carregar';
-            alert('Erro da API: ' + result.mensagem);
+            alert('Erro da API: ' + RespostaApi.mensagemErro(result));
         }
     } catch (error) {
         // BLINDAGEM 4: Se cair aqui, a internet caiu ou a API desligou. Ele pula um alerta!
         console.error("Falha fatal no carregamento:", error);
         document.getElementById('p-nome').textContent = 'Falha de Conexão';
-        alert("Erro técnico no JavaScript ao carregar a tela:\n" + error.message);
+        alert('Falha na comunicação com o servidor ao carregar o perfil.');
     }
 }
 
@@ -173,7 +173,7 @@ function sairDaConta(e) {
 }
 
 async function excluirConta() {
-    const confirmacao = confirm("CUIDADO: Você tem certeza absoluta que deseja excluir sua conta?\n\nEsta ação não pode ser desfeita e você perderá todo o acesso ao sistema.");
+    const confirmacao = confirm('Deseja excluir sua conta?\n\nA exclusão só é permitida quando não há solicitações vinculadas. Contas com histórico são preservadas; para encerrar o acesso mantendo os registros, procure a administração.');
     if (!confirmacao) return; 
 
     const token = localStorage.getItem('token_jwt');
@@ -181,18 +181,17 @@ async function excluirConta() {
     const cpf = cpfCru.replace(/\D/g, ''); 
 
     try {
-        const response = await fetch(`http://localhost:9000/perfil/${cpf}`, {
+        const response = await fetch(Api.url(`/perfil/${cpf}`), {
             method: 'DELETE',
             headers: { 'Authorization': `Bearer ${token}` }
         });
 
         if (response.ok) {
-            alert('Sua conta foi excluída com sucesso. Sentiremos sua falta!');
+            alert('Sua conta sem solicitações foi excluída com sucesso.');
             localStorage.clear();
             window.location.replace('login.html');
         } else {
-            const result = await response.json();
-            alert('Não foi possível excluir a conta: ' + (result.mensagem || 'Você pode ter solicitações em andamento.'));
+            alert('Não foi possível excluir a conta: ' + await RespostaApi.lerErro(response, 'Contas com solicitações vinculadas são preservadas para manter o histórico.'));
         }
     } catch (error) {
         console.error('Erro:', error);

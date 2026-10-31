@@ -1,4 +1,4 @@
-let paginaAtual = 1;
+﻿let paginaAtual = 1;
 const itensPorPagina = 5;
 let totalPaginas = 1;
 let timeoutBusca;
@@ -85,7 +85,7 @@ async function carregarUsuarios() {
     const filtroStatus = document.getElementById('f-status').value;
 
     try {
-        const url = new URL('http://localhost:9000/admin/usuarios');
+        const url = new URL(Api.url('/admin/usuarios'));
         url.searchParams.append('page', paginaAtual);
         url.searchParams.append('limit', itensPorPagina);
         if (busca) url.searchParams.append('search', busca);
@@ -128,57 +128,51 @@ async function carregarUsuarios() {
                 const iniciais = user.nome.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
                 
                 // Formatação do Cargo
-                let cargoHtml = '';
-                if (user.idCargo === 1) cargoHtml = '<span class="role-tag">🛡️ Administrador</span>';
-                else if (user.idCargo === 2) cargoHtml = '<span class="role-tag">💊 Funcionário</span>';
-                else if (user.idCargo === 3) cargoHtml = '<span class="role-tag" style="background:var(--gray-100);color:var(--gray-700);border-color:var(--gray-300)">🧑‍⚕️ Paciente</span>';
-                else cargoHtml = '<span class="role-empty">Nenhum cargo</span>';
+                let cargo;
+                if (user.idCargo === 1) cargo = UI.el('span', 'role-tag', '🛡️ Administrador');
+                else if (user.idCargo === 2) cargo = UI.el('span', 'role-tag', '💊 Funcionário');
+                else if (user.idCargo === 3) {
+                    cargo = UI.el('span', 'role-tag', '🧑‍⚕️ Paciente');
+                    cargo.style.background = 'var(--gray-100)';
+                    cargo.style.color = 'var(--gray-700)';
+                    cargo.style.borderColor = 'var(--gray-300)';
+                } else cargo = UI.el('span', 'role-empty', 'Nenhum cargo');
 
                 // Formatação do Status
                 const isAtivo = user.status === 'Ativo';
-                const statusHtml = isAtivo 
-                    ? '<div class="flex items-center gap-2"><span class="status-dot active"></span><span class="text-sm font-semibold text-green-600">Ativo</span></div>'
-                    : '<div class="flex items-center gap-2"><span class="status-dot inactive"></span><span class="text-sm font-semibold text-gray-500">Inativo</span></div>';
-
-                const opacity = isAtivo ? '1' : '0.6';
-
-                // Encode para os botões do modal
-                const userJson = encodeURIComponent(JSON.stringify(user));
-
-                // Botão de Ativar/Desativar
-                const btnStatus = isAtivo
-                    ? `<button class="btn btn-danger btn-sm" onclick="abrirModalStatus('${user.cpf}', '${user.nome}', true)" title="Desativar">🚫</button>`
-                    : `<button class="btn btn-success btn-sm" onclick="abrirModalStatus('${user.cpf}', '${user.nome}', false)" title="Reativar">✅ Reativar</button>`;
-
-                lista.innerHTML += `
-                    <tr style="opacity: ${opacity}">
-                        <td>
-                            <div class="flex items-center gap-3">
-                                <div class="user-avatar" ${!isAtivo ? 'style="background:var(--gray-400)"' : ''}>${iniciais}</div>
-                                <div>
-                                    <div class="font-semibold ${isAtivo ? 'text-blue-900' : 'text-gray-600'}">${user.nome}</div>
-                                </div>
-                            </div>
-                        </td>
-                        <td class="${isAtivo ? 'text-gray-600' : 'text-gray-400'} text-sm">${user.cpfFormatado}</td>
-                        <td class="${isAtivo ? 'text-gray-600' : 'text-gray-400'} text-sm">${user.email}</td>
-                        <td>${cargoHtml}</td>
-                        <td>${statusHtml}</td>
-                        <td>
-                            <div class="table-actions">
-                                <button class="btn btn-primary btn-sm" onclick="abrirModalCargo('${user.cpf}', '${user.nome}', ${user.idCargo}, '${iniciais}')">+ Cargo</button>
-                                <button class="btn btn-outline btn-sm" onclick="abrirModalEditarUsuario('${userJson}')">✏️</button>
-                                ${btnStatus}
-                            </div>
-                        </td>
-                    </tr>
-                `;
+                const status = UI.add(UI.el('div', 'flex items-center gap-2'),
+                    UI.el('span', isAtivo ? 'status-dot active' : 'status-dot inactive'),
+                    UI.el('span', `text-sm font-semibold ${isAtivo ? 'text-green-600' : 'text-gray-500'}`, isAtivo ? 'Ativo' : 'Inativo')
+                );
+                const avatar = UI.el('div', 'user-avatar', iniciais);
+                if (!isAtivo) avatar.style.background = 'var(--gray-400)';
+                const acoes = UI.el('div', 'table-actions');
+                if (parseInt(localStorage.getItem('usuario_cargo')) === 1) {
+                    UI.add(acoes, UI.btn('+ Cargo', 'btn btn-primary btn-sm', () => abrirModalCargo(user.cpf, user.nome, user.idCargo, iniciais)));
+                }
+                UI.add(acoes,
+                    UI.btn('✏️', 'btn btn-outline btn-sm', () => abrirModalEditarUsuario(user)),
+                    UI.btn(isAtivo ? '🚫' : '✅ Reativar', isAtivo ? 'btn btn-danger btn-sm' : 'btn btn-success btn-sm',
+                        () => abrirModalStatus(user.cpf, user.nome, isAtivo), { title: isAtivo ? 'Desativar' : 'Reativar' })
+                );
+                const linha = UI.el('tr');
+                linha.style.opacity = isAtivo ? '1' : '0.6';
+                const textoClasse = `${isAtivo ? 'text-gray-600' : 'text-gray-400'} text-sm`;
+                UI.add(lista, UI.add(linha,
+                    UI.add(UI.el('td'), UI.add(UI.el('div', 'flex items-center gap-3'), avatar,
+                        UI.add(UI.el('div'), UI.el('div', `font-semibold ${isAtivo ? 'text-blue-900' : 'text-gray-600'}`, user.nome)))),
+                    UI.el('td', textoClasse, user.cpfFormatado),
+                    UI.el('td', textoClasse, user.email),
+                    UI.add(UI.el('td'), cargo),
+                    UI.add(UI.el('td'), status),
+                    UI.add(UI.el('td'), acoes)
+                ));
             });
         } else {
-            lista.innerHTML = `<tr><td colspan="7" class="text-center py-4 text-red-500">Erro: ${result.mensagem}</td></tr>`;
+            UI.msg(lista, `Erro: ${RespostaApi.mensagemErro(result)}`, { tableCols: 7, className: 'text-center py-4 text-red-500' });
         }
     } catch (error) {
-        lista.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-red-500">Erro de conexão com o servidor.</td></tr>';
+        UI.msg(lista, 'Erro de conexão com o servidor.', { tableCols: 7, className: 'text-center py-4 text-red-500' });
     }
 }
 
@@ -221,7 +215,7 @@ function abrirModalNovoUsuario() {
 }
 
 function abrirModalEditarUsuario(userJson) {
-    const user = JSON.parse(decodeURIComponent(userJson));
+    const user = typeof userJson === 'string' ? JSON.parse(decodeURIComponent(userJson)) : userJson;
     document.getElementById('form-user').reset();
     
     document.getElementById('u-modo').value = 'editar';
@@ -284,7 +278,7 @@ async function salvarUsuario(e) {
         email: document.getElementById('u-email').value
     };
 
-    let url = 'http://localhost:9000/admin/usuarios';
+    let url = Api.url('/admin/usuarios');
     let metodo = 'POST';
 
     if (modo === 'novo') {
@@ -294,7 +288,7 @@ async function salvarUsuario(e) {
         // Modo edição
         metodo = 'PUT';
         const cpfLimpo = cpfRaw.replace(/\D/g, '');
-        url = `http://localhost:9000/admin/usuarios/${cpfLimpo}`;
+        url = Api.url(`/admin/usuarios/${cpfLimpo}`);
     }
 
     try {
@@ -309,8 +303,7 @@ async function salvarUsuario(e) {
             fecharModal('modal-user');
             carregarUsuarios();
         } else {
-            const erro = await response.json();
-            alert('Erro: ' + (erro.mensagem || 'Falha ao salvar.'));
+            alert('Erro: ' + await RespostaApi.lerErro(response, 'Falha ao salvar.'));
         }
     } catch (error) { alert('Erro na comunicação com a API.'); }
 }
@@ -345,7 +338,7 @@ async function salvarCargo(e) {
     if (novoCargo === 0) { alert('Selecione um cargo.'); return; }
 
     try {
-        const response = await fetch(`http://localhost:9000/admin/usuarios/${cpf}/cargo`, {
+        const response = await fetch(Api.url(`/admin/usuarios/${cpf}/cargo`), {
             method: 'PATCH',
             headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
             body: JSON.stringify({ idCargo: novoCargo })
@@ -356,7 +349,7 @@ async function salvarCargo(e) {
             fecharModal('modal-role');
             carregarUsuarios();
         } else {
-            alert('Erro ao atualizar cargo.');
+            alert(await RespostaApi.lerErro(response, 'Erro ao atualizar cargo.'));
         }
     } catch (error) { alert('Falha de conexão.'); }
 }
@@ -397,7 +390,7 @@ async function confirmarStatus() {
     const novoStatus = document.getElementById('st-novo-status').value;
 
     try {
-        const response = await fetch(`http://localhost:9000/admin/usuarios/${cpf}/status`, {
+        const response = await fetch(Api.url(`/admin/usuarios/${cpf}/status`), {
             method: 'PATCH',
             headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
             body: JSON.stringify({ status: novoStatus })
@@ -408,7 +401,7 @@ async function confirmarStatus() {
             fecharModal('modal-status');
             carregarUsuarios();
         } else {
-            alert('Erro ao alterar status.');
+            alert(await RespostaApi.lerErro(response, 'Erro ao alterar status.'));
         }
     } catch (error) { alert('Falha de conexão.'); }
 }

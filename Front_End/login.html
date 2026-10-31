@@ -4,11 +4,13 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Login — Medicamentos de Alto Custo</title>
+  <script src="js/theme.js"></script>
   <link rel="stylesheet" href="css/style.css"/>
 </head>
 <body>
+<a class="skip-link" href="#main-content">Pular para o conteúdo principal</a>
 
-<main class="auth-page">
+<main class="auth-page" id="main-content" tabindex="-1">
   <div class="auth-box fade-in-up">
 
     <div class="card auth-card">
@@ -18,7 +20,7 @@
       <!-- Separador -->
       <div class="or-separator">
         <div class="or-line"></div>
-        <span class="or-text">acesso de demonstração</span>
+        <span class="or-text">Acesse sua conta</span>
         <div class="or-line"></div>
       </div>
 
@@ -28,7 +30,7 @@
 
           <div class="form-group">
             <label class="form-label" for="usuario">CPF</label>
-            <input class="input" id="usuario" name="usuario" type="text" placeholder="000.000.000-00" maxlength="14" autocomplete="off" required/>
+            <input class="input" id="usuario" name="usuario" type="text" placeholder="000.000.000-00" maxlength="14" inputmode="numeric" autocomplete="username" required/>
           </div>
 
           <div class="form-group">
@@ -64,7 +66,7 @@
       </div>
 
       <p class="text-xs text-gray-400 text-center mt-4">
-        Esta plataforma utiliza autenticação oficial do GOV.BR.
+        Entre com o CPF e a senha cadastrados na plataforma.
       </p>
     </div>
 
@@ -75,6 +77,10 @@
   </div>
 </main>
 
+<script src="config.js"></script>
+<script src="js/api-client.js"></script>
+<script src="js/api-response.js"></script>
 <script src="js/login.js"></script>
+<script src="js/accessibility.js"></script>
 </body>
 </html>

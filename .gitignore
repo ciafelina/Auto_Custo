@@ -1,0 +1,51 @@
+# Configuração de cada máquina e segredos
+**/config.ini
+**/config.*.ini
+!config.example.ini
+**/secrets.ini
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.pfx
+*.p12
+*.jks
+id_rsa
+id_ed25519
+
+# Histórico local da IDE e artefatos compilados
+**/__history/
+**/__recovery/
+/Win32/
+/Win64/
+/Linux64/
+*.dcu
+*.exe
+*.dll
+*.bpl
+*.so
+*.dproj.local
+*.identcache
+*.bak
+*.backup
+*.zip
+*.7z
+*.db
+*.sqlite
+*.sqlite3
+*.mdf
+*.ldf
+*.bacpac
+*.dacpac
+
+# Exemplos e vetores criptográficos de terceiros (não usados na aplicação)
+/modules/delphi-jose-jwt/Samples/
+/modules/delphi-jose-jwt/Tests/
+/modules/hashlib4pascal/HashLib.Tests/
+
+# Saída dos testes
+/tests/.build/
+/tests/*.log
+**/__pycache__/
+*.pyc

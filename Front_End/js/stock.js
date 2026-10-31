@@ -1,4 +1,4 @@
-let paginaAtual = 1;
+﻿let paginaAtual = 1;
 const itensPorPagina = 4; 
 let totalPaginas = 1;
 let timeoutBusca; 
@@ -44,13 +44,9 @@ document.addEventListener('DOMContentLoaded', () => {
         // É Admin ou Funcionário
         if (menuAdmin) menuAdmin.classList.remove('hidden');
         
-        if (cargo === 1) {
-            const linkUsuarios = document.getElementById('link-usuarios');
-            if (linkUsuarios) linkUsuarios.classList.remove('hidden');
-            if (lblCargoSidebar) lblCargoSidebar.textContent = 'Administrador';
-        } else {
-            if (lblCargoSidebar) lblCargoSidebar.textContent = 'Funcionário';
-        }
+        const linkUsuarios = document.getElementById('link-usuarios');
+        if (linkUsuarios) linkUsuarios.classList.remove('hidden');
+        if (lblCargoSidebar) lblCargoSidebar.textContent = cargo === 1 ? 'Administrador' : 'Funcionário';
     } else {
         // É Paciente (Cargo 3)
         if (menuPaciente) menuPaciente.classList.remove('hidden');
@@ -87,6 +83,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- EVENTO DO MODAL ---
     document.getElementById('form-solicitar').addEventListener('submit', realizarPedido);
+    document.querySelector('.pedido-aviso-fechar').addEventListener('click', () => {
+        document.getElementById('pedido-aviso').classList.add('hidden');
+        document.getElementById('f-search').focus();
+    });
 
     // Carrega a tela pela primeira vez
     carregarEstoque();
@@ -109,7 +109,7 @@ async function carregarEstoque() {
     const disponibilidade = document.getElementById('f-avail').value;
 
     try {
-        const url = new URL('http://localhost:9000/produtos');
+        const url = new URL(Api.url('/produtos'));
         url.searchParams.append('page', paginaAtual);
         url.searchParams.append('limit', itensPorPagina);
         
@@ -154,47 +154,43 @@ async function carregarEstoque() {
             }
 
             medicamentos.forEach(med => {
-                let statusClass = '', statusText = '', statusColor = '', btnDisable = '';
+                const classificacao = Estoque.classificar(med.estoque, med.estoqueMinimo);
+                let statusClass = '', statusText = '', statusColor = '';
 
-                if (med.estoque === 0) {
-                    statusClass = 'unavailable'; statusText = 'Indisponível'; statusColor = 'text-red-600'; btnDisable = 'disabled';
-                } else if (med.estoque <= 5) {
+                if (classificacao === 'out') {
+                    statusClass = 'unavailable'; statusText = 'Indisponível'; statusColor = 'text-red-600';
+                } else if (classificacao === 'low') {
                     statusClass = 'low'; statusText = 'Crítico'; statusColor = 'text-orange-600';
                 } else {
                     statusClass = 'available'; statusText = 'Disponível'; statusColor = 'text-green-600';
                 }
 
-                const nomeFormatado = `${med.nome} ${med.dosagem}`;
-                const botaoHtml = med.estoque === 0 
-                    ? `<button class="btn btn-secondary btn-sm btn-block" disabled>Indisponível</button>`
-                    : `<button class="btn btn-primary btn-sm btn-block" onclick="abrirModal(${med.id}, '${nomeFormatado}', ${med.estoque})">🛒 Solicitar</button>`;
-
-                lista.innerHTML += `
-                    <article class="card p-6 mb-4" role="listitem">
-                      <div class="med-grid">
-                        <div>
-                          <h3 class="text-blue-900 mb-1" style="font-size:1rem">${med.nome}</h3>
-                          <p class="text-sm text-gray-600 mb-3">${med.descricao}</p>
-                          <div class="flex gap-2 flex-wrap">
-                            <span class="tag tag-blue">${med.categoria}</span>
-                            <span class="tag tag-gray">${med.dosagem}</span>
-                            <span class="tag tag-gray">${med.fabricante}</span>
-                          </div>
-                        </div>
-                        <div class="stock-box ${statusClass}">
-                          <p class="stock-num ${statusColor}">${med.estoque}</p>
-                          <p class="text-xs font-semibold ${statusColor}" style="margin-top:.15rem">${statusText}</p>
-                        </div>
-                        <div style="min-width:110px">
-                          ${botaoHtml}
-                        </div>
-                      </div>
-                    </article>
-                `;
+                const nomeFormatado = `${med.nome ?? ''} ${med.dosagem ?? ''}`;
+                const botao = classificacao === 'out'
+                    ? UI.btn('Indisponível', 'btn btn-secondary btn-sm btn-block', () => {}, {disabled: true})
+                    : UI.btn('🛒 Solicitar', 'btn btn-primary btn-sm btn-block', () => abrirModal(med.id, nomeFormatado, med.estoque));
+                const titulo = UI.el('h3', 'text-blue-900 mb-1', med.nome);
+                titulo.style.fontSize = '1rem';
+                const dados = UI.add(UI.el('div'), titulo,
+                    UI.el('p', 'text-sm text-gray-600 mb-3', med.descricao),
+                    UI.add(UI.el('div', 'flex gap-2 flex-wrap'),
+                        UI.el('span', 'tag tag-blue', med.categoria),
+                        UI.el('span', 'tag tag-gray', med.dosagem),
+                        UI.el('span', 'tag tag-gray', med.fabricante)));
+                const status = UI.el('p', `text-xs font-semibold ${statusColor}`, statusText);
+                status.style.marginTop = '.15rem';
+                const saldo = UI.add(UI.el('div', `stock-box ${statusClass}`),
+                    UI.el('p', `stock-num ${statusColor}`, med.estoque), status);
+                const acoes = UI.add(UI.el('div'), botao);
+                acoes.style.minWidth = '110px';
+                const card = UI.add(UI.el('article', 'card p-6 mb-4'),
+                    UI.add(UI.el('div', 'med-grid'), dados, saldo, acoes));
+                card.setAttribute('role', 'listitem');
+                lista.append(card);
             });
 
         } else {
-            lista.innerHTML = `<p class="text-red-500 text-center">Erro: ${resJson.mensagem}</p>`;
+            UI.msg(lista, 'Erro: ' + RespostaApi.mensagemErro(resJson, 'Falha no servidor.'), {className: 'text-red-500 text-center'});
         }
     } catch (error) {
         console.error('Erro:', error);
@@ -203,6 +199,7 @@ async function carregarEstoque() {
 }
 
 function abrirModal(idMedicamento, nomeMedicamento, estoqueMaximo) {
+    document.getElementById('pedido-aviso').classList.add('hidden');
     document.getElementById('mod-id-med').value = idMedicamento;
     document.getElementById('mod-nome-med').textContent = nomeMedicamento;
     document.getElementById('mod-estoque').textContent = estoqueMaximo;
@@ -225,11 +222,11 @@ async function realizarPedido(e) {
     const cpf = localStorage.getItem('usuario_cpf');
     
     const nomeMedicamento = document.getElementById('mod-nome-med').textContent;
-    const quantidadeDigitada = parseInt(document.getElementById('req-qty').value);
+    const quantidadeDigitada = Number(document.getElementById('req-qty').value);
     const idMedicamento = parseInt(document.getElementById('mod-id-med').value);
 
-    if (quantidadeDigitada < 1) {
-        alert('A quantidade deve ser pelo menos 1.');
+    if (!Number.isSafeInteger(quantidadeDigitada) || quantidadeDigitada < 1 || quantidadeDigitada > 2147483647) {
+        alert('Informe uma quantidade inteira maior que zero dentro do limite permitido.');
         return;
     }
 
@@ -241,7 +238,7 @@ async function realizarPedido(e) {
     };
 
     try {
-        const response = await fetch('http://localhost:9000/solicitacoes', {
+        const response = await fetch(Api.url('/solicitacoes'), {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${token}`,
@@ -255,16 +252,18 @@ async function realizarPedido(e) {
             result = await response.json();
         } catch (err) {
             console.error("Erro ao ler JSON da resposta.");
-            alert('Erro crítico no servidor (Delphi). Verifique o console da API.');
+            alert('Não foi possível ler a resposta do servidor. Tente novamente.');
             return;
         }
 
         if (response.ok && result.sucesso) {
-            alert('Pedido realizado com sucesso! Você pode acompanhá-lo no seu Dashboard.');
             fecharModal();
-            window.location.reload(); 
+            const aviso = document.getElementById('pedido-aviso');
+            aviso.classList.remove('hidden');
+            await carregarEstoque();
+            if (!aviso.classList.contains('hidden')) aviso.focus();
         } else {
-            alert('Erro ao solicitar: ' + (result.mensagem || 'Algo deu errado no servidor.'));
+            alert('Erro ao solicitar: ' + RespostaApi.mensagemErro(result));
         }
     } catch (error) {
         console.error('Erro na requisição Fetch:', error);

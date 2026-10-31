@@ -1,10 +1,10 @@
-unit Servico_Arquivo;
+﻿unit Servico_Arquivo;
 
 interface
 
 uses
   System.SysUtils, FireDAC.Comp.Client, FireDAC.DApt, Data.DB,
-  System.JSON, Conexao, Excecoes, Mensagens;
+  System.JSON, Conexao, Excecoes, Mensagens, FireDAC.Stan.Error;
 
 type
   TServicoArquivo = class
@@ -39,12 +39,12 @@ begin
     try
       LQry.ExecSQL;
     except
-      on E: Exception do
+      on E: EFDDBEngineException do
       begin
-        if Pos('FK_Arquivo_Documentos', E.Message) > 0 then
-          raise EErroApi.Create(400, TCodigoErro.RequisicaoInvalida, 'O Documento (idDoc) informado n�o existe.')
+        if E.Kind = ekFKViolated then
+          raise EErroApi.Create(400, TCodigoErro.RequisicaoInvalida, 'O Documento (idDoc) informado não existe.')
         else
-          raise EErroApi.Create(500, TCodigoErro.ErroInterno, 'Erro ao salvar arquivo f�sico: ' + E.Message);
+          raise EErroApi.Create(500, TCodigoErro.ErroGravacaoBanco, 'Não foi possível registrar o arquivo físico. Tente novamente.');
       end;
     end;
   finally

@@ -4,13 +4,15 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Medicamentos de Alto Custo — São José do Rio Preto</title>
+  <script src="js/theme.js"></script>
   <link rel="stylesheet" href="css/style.css"/>
 </head>
 <body>
+<a class="skip-link" href="#main-content">Pular para o conteúdo principal</a>
 
 <header class="pub-header" role="banner">
   <div class="container pub-header-inner">
-    <a href="index.html" class="pub-logo">Medicamentos Alto Custo</a>
+    <a href="index.html" class="pub-logo"><span class="brand-mark" aria-hidden="true">✚</span><span>Medicamentos <small>Alto Custo · SJRP</small></span></a>
     <nav aria-label="Navegação principal" class="flex gap-3">
       <a href="register.html" class="btn btn-outline btn-sm" style="border-color: var(--blue-900); color: var(--blue-900);">Cadastre-se</a>
       <a href="login.html" class="btn btn-primary btn-sm">Entrar</a>
@@ -18,22 +20,23 @@
   </div>
 </header>
 
-<main>
+<main id="main-content" tabindex="-1">
 
   <section class="hero" aria-labelledby="hero-title">
     <div class="container">
       <div class="hero-inner fade-in-up">
+        <p class="eyebrow"><span aria-hidden="true">✚</span> CUIDADO QUE CONECTA</p>
         <h1 id="hero-title" class="text-blue-900">
-          Plataforma de Medicamentos de Alto Custo
+          Seu cuidado começa com acesso à informação
         </h1>
         <p class="hero-subtitle">
-          Acesso simplificado e seguro a medicamentos essenciais em São José do Rio Preto
+          Consulte medicamentos e acompanhe suas solicitações em um só lugar, com mais tranquilidade.
         </p>
         <div class="golden-divider" role="separator" aria-hidden="true"></div>
         
         <div class="flex items-center justify-center gap-4 mt-6 flex-wrap">
-          <a href="login.html" class="btn btn-primary btn-lg">Acessar Plataforma</a>
-          <a href="register.html" class="btn btn-outline btn-lg" style="border-color: var(--blue-900); color: var(--blue-900);">Criar Nova Conta</a>
+          <a href="login.html" class="btn btn-primary btn-lg">Entrar na plataforma</a>
+          <a href="register.html" class="btn btn-outline btn-lg" style="border-color: var(--blue-900); color: var(--blue-900);">Criar minha conta</a>
         </div>
       </div>
     </div>
@@ -41,19 +44,19 @@
 
   <section class="features" aria-labelledby="features-title">
     <div class="container">
-      <h2 id="features-title" class="text-center text-blue-900">Funcionalidades Principais</h2>
+      <h2 id="features-title" class="text-center text-blue-900">Tudo o que você precisa em um só lugar</h2>
       <div class="features-grid">
 
         <article class="card card-hover feature-card p-8">
           <div class="feature-icon" aria-hidden="true">🔐</div>
-          <h3 class="text-blue-900 mb-2">Autenticação Segura</h3>
-          <p class="text-gray-600 text-sm">Seus dados e senhas são protegidos com criptografia de ponta a ponta.</p>
+          <h3 class="text-blue-900 mb-2">Acesse sua conta</h3>
+          <p class="text-gray-600 text-sm">Entre com seu CPF e senha para acessar seus dados.</p>
         </article>
 
         <article class="card card-hover feature-card p-8">
           <div class="feature-icon" aria-hidden="true">📦</div>
           <h3 class="text-blue-900 mb-2">Consulta de Estoque</h3>
-          <p class="text-gray-600 text-sm">Visualize a disponibilidade de medicamentos em tempo real</p>
+          <p class="text-gray-600 text-sm">Consulte os medicamentos e veja as informações de disponibilidade.</p>
         </article>
 
         <article class="card card-hover feature-card p-8">
@@ -68,7 +71,7 @@
 
   <section class="how-section" aria-labelledby="how-title">
     <div class="container">
-      <h2 id="how-title" class="text-center text-blue-900 mb-8">Como Funciona</h2>
+      <h2 id="how-title" class="text-center text-blue-900 mb-8">Como começar</h2>
       <ol class="steps-list">
         <li>
           <article class="card card-hover step-card p-6">
@@ -111,5 +114,6 @@
   </div>
 </footer>
 
+<script src="js/accessibility.js"></script>
 </body>
 </html>

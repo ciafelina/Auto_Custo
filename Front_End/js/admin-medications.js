@@ -60,7 +60,7 @@ async function carregarMedicamentos() {
     const busca = document.getElementById('med-search').value;
 
     try {
-        const url = new URL('http://localhost:9000/admin/medicamentos');
+        const url = new URL(Api.url('/admin/medicamentos'));
         url.searchParams.append('page', paginaAtual);
         url.searchParams.append('limit', itensPorPagina);
         if (busca) url.searchParams.append('search', busca);
@@ -92,45 +92,46 @@ async function carregarMedicamentos() {
             }
 
             medicamentos.forEach(med => {
-                let badgeStatus = '';
-                if (med.estoque === 0) {
-                    badgeStatus = '<span class="badge badge-unavailable">Indisponível</span>';
-                } else if (med.estoque <= med.estoqueMinimo) {
-                    badgeStatus = '<span class="badge badge-low">Crítico</span>';
+                const classificacao = Estoque.classificar(med.estoque, med.estoqueMinimo);
+                let statusClasse;
+                let statusTexto;
+                if (classificacao === 'out') {
+                    statusClasse = 'badge-unavailable';
+                    statusTexto = 'Indisponível';
+                } else if (classificacao === 'low') {
+                    statusClasse = 'badge-low';
+                    statusTexto = 'Crítico';
                 } else {
-                    badgeStatus = '<span class="badge badge-available">Disponível</span>';
+                    statusClasse = 'badge-available';
+                    statusTexto = 'Disponível';
                 }
 
-                const medJson = encodeURIComponent(JSON.stringify(med));
-
-                lista.innerHTML += `
-                    <tr>
-                        <td>
-                            <div class="font-semibold text-blue-900">${med.nome}</div>
-                            <div class="text-xs text-gray-500 truncate" style="max-width:200px" title="${med.descricao}">${med.descricao || 'Sem descrição'}</div>
-                        </td>
-                        <td><span class="tag tag-blue">${med.categoria}</span></td>
-                        <td class="text-gray-600">${med.dosagem || '-'}</td>
-                        <td class="text-gray-600">${med.fabricante || '-'}</td>
-                        <td><span class="font-bold ${med.estoque === 0 ? 'text-red-600' : (med.estoque <= med.estoqueMinimo ? 'text-orange-600' : 'text-green-600')}">${med.estoque}</span></td>
-                        <td class="text-gray-600">${med.estoqueMinimo}</td>
-                        <td>${badgeStatus}</td>
-                        <td>
-                            <div class="table-actions">
-                                <button class="btn btn-outline btn-sm" onclick="abrirModalMedicamento('${medJson}')">✏️</button>
-                                <button class="btn btn-outline btn-sm" onclick="abrirModalEstoque(${med.id}, '${med.nome}', ${med.estoque})">📦</button>
-                                <button class="btn btn-danger btn-sm" onclick="abrirModalExcluir(${med.id}, '${med.nome}')">🗑️</button>
-                            </div>
-                        </td>
-                    </tr>
-                `;
+                const descricao = UI.el('div', 'text-xs text-gray-500 truncate', med.descricao || 'Sem descrição');
+                descricao.style.maxWidth = '200px';
+                descricao.title = med.descricao || '';
+                const estoqueClasse = classificacao === 'out' ? 'text-red-600' : (classificacao === 'low' ? 'text-orange-600' : 'text-green-600');
+                const acoes = UI.add(UI.el('div', 'table-actions'),
+                    UI.btn('✏️', 'btn btn-outline btn-sm', () => abrirModalMedicamento(med)),
+                    UI.btn('📦', 'btn btn-outline btn-sm', () => abrirModalEstoque(med.id, med.nome, med.estoque), { title: 'Atualizar estoque' }),
+                    UI.btn('🗑️', 'btn btn-danger btn-sm', () => abrirModalExcluir(med.id, med.nome))
+                );
+                UI.add(lista, UI.add(UI.el('tr'),
+                    UI.add(UI.el('td'), UI.el('div', 'font-semibold text-blue-900', med.nome), descricao),
+                    UI.add(UI.el('td'), UI.el('span', 'tag tag-blue', med.categoria)),
+                    UI.el('td', 'text-gray-600', med.dosagem || '-'),
+                    UI.el('td', 'text-gray-600', med.fabricante || '-'),
+                    UI.add(UI.el('td'), UI.el('span', `font-bold ${estoqueClasse}`, med.estoque)),
+                    UI.el('td', 'text-gray-600', med.estoqueMinimo),
+                    UI.add(UI.el('td'), UI.el('span', `badge ${statusClasse}`, statusTexto)),
+                    UI.add(UI.el('td'), acoes)
+                ));
             });
         } else {
             // CORREÇÃO: Se a API voltar com erro (ex: 500 do Delphi), mostra na tela!
-            lista.innerHTML = `<tr><td colspan="8" class="text-center py-4 text-red-500">Erro: ${result.mensagem || 'Falha no servidor.'}</td></tr>`;
+            UI.msg(lista, `Erro: ${RespostaApi.mensagemErro(result, 'Falha no servidor.')}`, { tableCols: 8, className: 'text-center py-4 text-red-500' });
         }
     } catch (error) {
-        lista.innerHTML = '<tr><td colspan="8" class="text-center py-4 text-red-500">Erro de conexão com o servidor.</td></tr>';
+        UI.msg(lista, 'Erro de conexão com o servidor.', { tableCols: 8, className: 'text-center py-4 text-red-500' });
     }
 }
 
@@ -141,18 +142,21 @@ function abrirModalMedicamento(medJson = null) {
     const titulo = document.getElementById('modal-med-title');
     
     form.reset(); // Limpa o formulário
+    const modoEdicao = Boolean(medJson);
+    document.getElementById('m-stock').disabled = modoEdicao;
+    document.getElementById('m-stock-field').classList.toggle('hidden', modoEdicao);
+    document.getElementById('m-stock-edit-hint').classList.toggle('hidden', !modoEdicao);
 
     if (medJson) {
         // Modo Edição
         titulo.textContent = 'Editar Medicamento';
-        const med = JSON.parse(decodeURIComponent(medJson));
+        const med = typeof medJson === 'string' ? JSON.parse(decodeURIComponent(medJson)) : medJson;
         
         document.getElementById('m-id').value = med.id;
         document.getElementById('m-name').value = med.nome;
         document.getElementById('m-cat').value = med.categoria;
         document.getElementById('m-dos').value = med.dosagem;
         document.getElementById('m-mfr').value = med.fabricante;
-        document.getElementById('m-stock').value = med.estoque;
         document.getElementById('m-min').value = med.estoqueMinimo;
         document.getElementById('m-desc').value = med.descricao;
     } else {
@@ -169,17 +173,19 @@ async function salvarMedicamento(e) {
     const token = localStorage.getItem('token_jwt');
     const id = document.getElementById('m-id').value;
     const metodo = id ? 'PUT' : 'POST'; // Se tem ID, atualiza. Se não tem, cria.
-    const url = id ? `http://localhost:9000/admin/medicamentos/${id}` : `http://localhost:9000/admin/medicamentos`;
+    const url = id ? Api.url(`/admin/medicamentos/${id}`) : Api.url('/admin/medicamentos');
 
     const payload = {
         nome: document.getElementById('m-name').value,
         categoria: document.getElementById('m-cat').value,
         dosagem: document.getElementById('m-dos').value,
         fabricante: document.getElementById('m-mfr').value,
-        estoque: parseInt(document.getElementById('m-stock').value),
         estoqueMinimo: parseInt(document.getElementById('m-min').value),
         descricao: document.getElementById('m-desc').value
     };
+    if (!id) {
+        payload.estoque = parseInt(document.getElementById('m-stock').value);
+    }
 
     try {
         const response = await fetch(url, {
@@ -193,8 +199,7 @@ async function salvarMedicamento(e) {
             fecharModal('modal-med');
             carregarMedicamentos();
         } else {
-            const erro = await response.json();
-            alert('Erro: ' + erro.mensagem);
+            alert('Erro: ' + await RespostaApi.lerErro(response));
         }
     } catch (error) { alert('Falha ao salvar medicamento.'); }
 }
@@ -214,7 +219,7 @@ async function salvarEstoque(e) {
     const qtdNova = document.getElementById('stock-qty').value;
 
     try {
-        const response = await fetch(`http://localhost:9000/admin/medicamentos/${id}/estoque`, {
+        const response = await fetch(Api.url(`/admin/medicamentos/${id}/estoque`), {
             method: 'PATCH',
             headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
             body: JSON.stringify({ estoque: parseInt(qtdNova) })
@@ -225,7 +230,7 @@ async function salvarEstoque(e) {
             fecharModal('modal-stock');
             carregarMedicamentos();
         } else {
-            alert('Erro ao atualizar estoque.');
+            alert(await RespostaApi.lerErro(response, 'Erro ao atualizar estoque.'));
         }
     } catch (error) { alert('Falha ao comunicar com o servidor.'); }
 }
@@ -242,7 +247,7 @@ async function confirmarExclusao() {
     const id = document.getElementById('delete-id').value;
 
     try {
-        const response = await fetch(`http://localhost:9000/admin/medicamentos/${id}`, {
+        const response = await fetch(Api.url(`/admin/medicamentos/${id}`), {
             method: 'DELETE',
             headers: { 'Authorization': `Bearer ${token}` }
         });
@@ -252,7 +257,7 @@ async function confirmarExclusao() {
             fecharModal('modal-confirm');
             carregarMedicamentos();
         } else {
-            alert('Erro ao excluir. O medicamento pode estar vinculado a solicitações de pacientes.');
+            alert(await RespostaApi.lerErro(response, 'Não foi possível excluir. Medicamentos com solicitações vinculadas são preservados para manter o histórico.'));
         }
     } catch (error) { alert('Falha ao excluir.'); }
 }

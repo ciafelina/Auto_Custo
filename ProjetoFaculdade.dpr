@@ -1,17 +1,15 @@
-program ProjetoFaculdade;
+﻿program ProjetoFaculdade;
 
 {$APPTYPE CONSOLE}
 
 {$R *.res}
 
 uses
-  Winapi.Windows,
   System.SysUtils,
   System.Classes,
   System.SyncObjs,
   Horse,
   Horse.CORS,
-  Horse.Jhonson,
   Horse.Commons,
   System.JSON,
   Controlador_Login in 'controllers\Controlador_Login.pas',
@@ -21,6 +19,8 @@ uses
   Excecoes in 'utils\Excecoes.pas',
   Mensagens in 'utils\Mensagens.pas',
   Secrets in 'utils\Secrets.pas',
+  Estoque in 'utils\Estoque.pas',
+  JsonApi in 'utils\JsonApi.pas',
   Controlador_Usuario in 'controllers\Controlador_Usuario.pas',
   Servico_Usuario in 'services\Servico_Usuario.pas',
   Servico_Documento in 'services\Servico_Documento.pas',
@@ -45,9 +45,13 @@ uses
 begin
 
    try
+    CarregarSegredos;
+    HorseCORS.AllowedHeaders('Content-Type, Authorization');
+    HorseCORS.AllowedMethods('GET, POST, PUT, PATCH, DELETE, OPTIONS');
   	THorse.Use(CORS);
     THorse.Use(MiddlewareTratarErros);
-    THorse.Use(Jhonson);
+    THorse.Use(MiddlewareAutenticacao);
+    THorse.Use(MiddlewareJSON);
 
     TControladorAutenticacao.RegistrarRotas;
     TControladorUsuario.RegistrarRotas;
@@ -62,6 +66,9 @@ begin
     TControladorAdminUsuarios.RegistrarRotas;
 
     THorse.Listen(9000,
+{$IFDEF LINUX}
+        '127.0.0.1',
+{$ENDIF}
         procedure
         begin
           Writeln('======================================================');
@@ -74,8 +81,17 @@ begin
           Writeln('======================================================');
           Writeln('');
         end);
-  finally
-
+  except
+    on E: EConfiguracaoSegura do
+    begin
+      Writeln('Falha na configuração: ' + E.Message);
+      ExitCode := 1;
+    end;
+    on E: Exception do
+    begin
+      Writeln('Falha ao iniciar a API. Verifique a configuração e a disponibilidade da porta.');
+      ExitCode := 1;
+    end;
   end;
 
 end.

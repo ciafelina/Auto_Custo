@@ -1,4 +1,4 @@
-unit Controlador_Arquivo;
+ï»¿unit Controlador_Arquivo;
 
 interface
 
@@ -12,6 +12,8 @@ type
   end;
 
 implementation
+
+uses JsonApi;
 
 procedure DoListarArquivos(Req: THorseRequest; Res: THorseResponse; Next: TProc);
 begin
@@ -28,9 +30,9 @@ var
 begin
   LTokenDados := ValidarToken(Req);
 
-  LBody := Req.Body<TJSONObject>;
+  LBody := LerObjetoJSON(Req);
   if (not Assigned(LBody)) or (LBody.Count = 0) then
-    raise EErroApi.Create(400, TCodigoErro.RequisicaoInvalida, 'Corpo da requisição vazio.');
+    raise EErroApi.Create(400, TCodigoErro.RequisicaoInvalida, 'Corpo da requisiÃ§Ã£o vazio.');
 
   LProntuario := LBody.GetValue<string>('prontuario', '');
   LCaixa      := LBody.GetValue<string>('caixa', '');
@@ -38,16 +40,16 @@ begin
   LIdDoc      := LBody.GetValue<Integer>('idDoc', 0);
 
   if LPrateleira.Trim.IsEmpty then
-    raise EErroApi.Create(400, TCodigoErro.ParametroAusente, 'O campo "prateleiraCorredor" é obrigatório.');
+    raise EErroApi.Create(400, TCodigoErro.ParametroAusente, 'O campo "prateleiraCorredor" Ã© obrigatÃ³rio.');
 
   if LIdDoc <= 0 then
-    raise EErroApi.Create(400, TCodigoErro.ParametroAusente, 'O "idDoc" é obrigatório para vincular o arquivo físico.');
+    raise EErroApi.Create(400, TCodigoErro.ParametroAusente, 'O "idDoc" Ã© obrigatÃ³rio para vincular o arquivo fÃ­sico.');
 
   TServicoArquivo.Cadastrar(LProntuario, LCaixa, LPrateleira, LTokenDados.UsuarioCPF, LIdDoc);
 
   Res.Status(201).Send(
     TJSONObject.Create.AddPair('sucesso', TJSONBool.Create(True))
-                      .AddPair('mensagem', 'Localização física do arquivo registrada com sucesso!')
+                      .AddPair('mensagem', 'LocalizaÃ§Ã£o fÃ­sica do arquivo registrada com sucesso!')
   );
 end;
 

@@ -4,9 +4,11 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Consultar Estoque — Medicamentos de Alto Custo</title>
+  <script src="js/theme.js"></script>
   <link rel="stylesheet" href="css/style.css"/>
 </head>
 <body>
+<a class="skip-link" href="#main-content">Pular para o conteúdo principal</a>
 
 <div id="mob-overlay" aria-hidden="true"></div>
 
@@ -83,13 +85,22 @@
 </header>
 
 <!-- ═══ MAIN ═══ -->
-<main id="main">
+<main id="main" tabindex="-1"><span id="main-content" tabindex="-1"></span>
 
   <div class="page-header">
     <div class="page-header-text">
       <h1 class="text-blue-900">Consulta de Estoque</h1>
       <p>Medicamentos de Alto Custo Disponíveis</p>
     </div>
+  </div>
+
+  <div id="pedido-aviso" class="pedido-aviso hidden" role="status" aria-live="polite" aria-atomic="true" tabindex="-1">
+    <span class="pedido-aviso-icone" aria-hidden="true">✓</span>
+    <div class="pedido-aviso-conteudo">
+      <strong>Solicitação enviada com sucesso</strong>
+      <p>Você pode acompanhar o andamento no seu painel.</p>
+    </div>
+    <button type="button" class="pedido-aviso-fechar" aria-label="Fechar aviso de solicitação enviada">×</button>
   </div>
 
   <div class="card p-6 mb-6">
@@ -101,7 +112,7 @@
         <label class="form-label" for="f-search">Buscar Medicamento</label>
         <div class="search-wrap">
           <span class="search-icon" aria-hidden="true">🔍</span>
-          <input class="input" id="f-search" type="search" placeholder="Nome ou descrição…"/>
+          <input class="input" id="f-search" type="search" aria-label="Buscar medicamento" placeholder="Nome ou descrição…"/>
         </div>
       </div>
       <div class="form-group">
@@ -170,6 +181,12 @@
     </form>
   </div>
 </div>
+<script src="config.js"></script>
+<script src="js/api-client.js"></script>
+<script src="js/api-response.js"></script>
+<script src="js/ui-safe.js"></script>
+<script src="js/stock-status.js"></script>
 <script src="js/stock.js"></script>
+<script src="js/accessibility.js"></script>
 </body>
 </html>

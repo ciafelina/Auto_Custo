@@ -1,4 +1,4 @@
-unit Controlador_Interessado;
+Ôªøunit Controlador_Interessado;
 
 interface
 
@@ -13,6 +13,8 @@ type
 
 implementation
 
+uses JsonApi;
+
 procedure DoListarInteressados(Req: THorseRequest; Res: THorseResponse; Next: TProc);
 begin
   ValidarToken(Req);
@@ -26,15 +28,15 @@ var
 begin
   ValidarToken(Req);
 
-  LBody := Req.Body<TJSONObject>;
+  LBody := LerObjetoJSON(Req);
   if (not Assigned(LBody)) or (LBody.Count = 0) then
-    raise EErroApi.Create(400, TCodigoErro.RequisicaoInvalida, 'Corpo da requisiÁ„o vazio.');
+    raise EErroApi.Create(400, TCodigoErro.RequisicaoInvalida, 'Corpo da requisi√ß√£o vazio.');
 
   LDoc  := LBody.GetValue<string>('documentoInteressado', '');
   LNome := LBody.GetValue<string>('nomeInteressado', '');
 
   if LDoc.Trim.IsEmpty or LNome.Trim.IsEmpty then
-    raise EErroApi.Create(400, TCodigoErro.ParametroAusente, 'Documento e Nome s„o obrigatÛrios.');
+    raise EErroApi.Create(400, TCodigoErro.ParametroAusente, 'Documento e Nome s√£o obrigat√≥rios.');
 
   TServicoInteressado.Cadastrar(LDoc, LNome);
 

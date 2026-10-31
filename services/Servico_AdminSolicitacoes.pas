@@ -1,15 +1,16 @@
-unit Servico_AdminSolicitacoes;
+﻿unit Servico_AdminSolicitacoes;
 
 interface
 
 uses
-  System.SysUtils, Data.DB, FireDAC.Comp.Client, Conexao, System.JSON, Excecoes, Mensagens, System.MaskUtils;
+  System.SysUtils, Data.DB, FireDAC.Comp.Client, FireDAC.Stan.Param, Conexao, System.JSON, Excecoes, Mensagens, System.MaskUtils;
 
 type
   TServicoAdminSolicitacoes = class
   public
     class function Listar(APage, ALimit: Integer; const ABusca, AStatus: string): TJSONObject;
-    class procedure AlterarStatus(AId: Integer; const ANovoStatus, AObservacao: string);
+    class procedure AlterarStatus(AId: Integer; const ANovoStatus, AObservacao: string;
+      AAtualizarObservacao: Boolean = True);
   end;
 
 implementation
@@ -34,7 +35,7 @@ begin
     else
       LFiltroBusca := '%';
 
-    // 1. CONTAGEM TOTAL (Para a pagina��o)
+    // 1. CONTAGEM TOTAL (Para a paginação)
     LQry.SQL.Add('SELECT COUNT(*) as Total FROM Solicitacoes s ');
     LQry.SQL.Add('LEFT JOIN Medicamentos m ON s.IdMedicamento = m.idMedicamento ');
     LQry.SQL.Add('WHERE (CAST(s.idUsuarioCPF AS VARCHAR) LIKE :Busca OR m.nome LIKE :Busca) ');
@@ -75,7 +76,7 @@ begin
     LArray := TJSONArray.Create;
     while not LQry.Eof do
     begin
-      // Aplica a m�scara no CPF dinamicamente
+      // Aplica a máscara no CPF dinamicamente
       var LCPFFormatado := FormatMaskText('000\.000\.000\-00;0;_', LQry.FieldByName('idUsuarioCPF').AsString);
 
       LArray.AddElement(
@@ -99,61 +100,117 @@ begin
   end;
 end;
 
-class procedure TServicoAdminSolicitacoes.AlterarStatus(AId: Integer; const ANovoStatus, AObservacao: string);
+class procedure TServicoAdminSolicitacoes.AlterarStatus(AId: Integer; const ANovoStatus, AObservacao: string;
+  AAtualizarObservacao: Boolean);
 var
   LConn: TFDConnection;
   LQry: TFDQuery;
-  LStatusAtual: string;
-  LIdMed, LQtd: Integer;
+  LNovoStatus, LOrigemPermitida: string;
+  LIdMed, LIdMedBloqueado: Integer;
+  LQtd: Int64;
+  LExiste: Boolean;
 begin
+  if AId <= 0 then
+    raise EErroApi.Create(400, TCodigoErro.RequisicaoInvalida, 'Identificador da solicitação inválido.');
+  LNovoStatus := Trim(ANovoStatus);
+  if LNovoStatus = 'Aprovado' then
+    LOrigemPermitida := 'status = ''Pendente'''
+  else if LNovoStatus = 'Retirado' then
+    LOrigemPermitida := 'status = ''Aprovado'''
+  else if LNovoStatus = 'Cancelado' then
+    LOrigemPermitida := 'status IN (''Pendente'', ''Aprovado'')'
+  else if LNovoStatus = 'Pendente' then
+    LOrigemPermitida := '1 = 0'
+  else
+    raise EErroApi.Create(400, TCodigoErro.StatusInvalido, 'Status de solicitação inválido.');
+
   LConn := TProvedorConexao.ObterConexao;
-  LQry := TFDQuery.Create(nil);
   try
-    LQry.Connection := LConn;
-
-    // Transa��o para evitar bagun�a no estoque se a internet cair na metade
-    LConn.StartTransaction;
+    LQry := TFDQuery.Create(nil);
     try
-      // 1. Descobre como o pedido est� hoje e quanto de rem�dio foi pedido
-      LQry.SQL.Text := 'SELECT status, IdMedicamento, quantidade FROM Solicitacoes WHERE idSolicitacao = :id';
-      LQry.ParamByName('id').AsInteger := AId;
-      LQry.Open;
-
-      if LQry.IsEmpty then
-        raise Exception.Create('Solicita��o n�o encontrada no banco de dados.');
-
-      LStatusAtual := LQry.FieldByName('status').AsString;
-      LIdMed := LQry.FieldByName('IdMedicamento').AsInteger;
-      LQtd := LQry.FieldByName('quantidade').AsInteger;
-      LQry.Close;
-
-      // 2. ESTORNO DE ESTOQUE: Se o admin cancelou algo que estava pendente, devolve o rem�dio pra prateleira!
-      if (ANovoStatus = 'Cancelado') and ((LStatusAtual = 'Pendente') or (LStatusAtual = 'Aprovado')) then
+      LQry.Connection := LConn;
+      LIdMedBloqueado := 0;
+      if LNovoStatus = 'Cancelado' then
       begin
-        // Prote��o extra: s� estorna se o rem�dio ainda existir no cat�logo
-        if LIdMed > 0 then
+        // Descobrir o cadastro sem manter lock de solicitação ao bloqueá-lo.
+        LQry.SQL.Text := 'SELECT IdMedicamento FROM Solicitacoes WHERE idSolicitacao = :id';
+        LQry.ParamByName('id').AsInteger := AId;
+        LQry.Open;
+        if not LQry.IsEmpty then
+          LIdMedBloqueado := LQry.FieldByName('IdMedicamento').AsInteger;
+        LQry.Close;
+      end;
+      LConn.StartTransaction;
+      try
+        if (LNovoStatus = 'Cancelado') and (LIdMedBloqueado > 0) then
         begin
-          LQry.SQL.Text := 'UPDATE Medicamentos SET quantidadeEstoque = quantidadeEstoque + :qtd WHERE idMedicamento = :idMed';
-          LQry.ParamByName('qtd').AsInteger := LQtd;
+          // Mesma ordem de pedido/exclusão: medicamento antes da solicitação.
+          LQry.SQL.Text := 'SELECT idMedicamento FROM Medicamentos WITH (XLOCK, HOLDLOCK) WHERE idMedicamento = :id';
+          LQry.ParamByName('id').AsInteger := LIdMedBloqueado;
+          LQry.Open;
+          LQry.Close;
+        end;
+        // Ganhar a transição antes de qualquer estorno. O UPDATE mantém o
+        // bloqueio até o commit e compete também com a retirada do paciente.
+        LQry.SQL.Text := 'UPDATE Solicitacoes SET status = :novo';
+        if AAtualizarObservacao then
+          LQry.SQL.Add(', observacao = :obs');
+        LQry.SQL.Add('WHERE idSolicitacao = :id AND ' + LOrigemPermitida);
+        LQry.ParamByName('novo').AsString := LNovoStatus;
+        if AAtualizarObservacao then
+          LQry.ParamByName('obs').AsString := AObservacao;
+        LQry.ParamByName('id').AsInteger := AId;
+        LQry.ExecSQL;
+        if LQry.RowsAffected <> 1 then
+        begin
+          LQry.SQL.Text := 'SELECT idSolicitacao FROM Solicitacoes WHERE idSolicitacao = :id';
+          LQry.ParamByName('id').AsInteger := AId;
+          LQry.Open;
+          LExiste := not LQry.IsEmpty;
+          LQry.Close;
+          if not LExiste then
+            raise EErroApi.Create(404, TCodigoErro.RecursoNaoEncontrado, 'Solicitação não encontrada.');
+          raise EErroApi.Create(409, TCodigoErro.TransicaoStatusInvalida, 'Esta mudança de status não é permitida. Atualize a lista de solicitações.');
+        end;
+
+        if LNovoStatus = 'Cancelado' then
+        begin
+          LQry.SQL.Text := 'SELECT IdMedicamento, quantidade FROM Solicitacoes WHERE idSolicitacao = :id';
+          LQry.ParamByName('id').AsInteger := AId;
+          LQry.Open;
+          LIdMed := LQry.FieldByName('IdMedicamento').AsInteger;
+          LQtd := LQry.FieldByName('quantidade').AsLargeInt;
+          LQry.Close;
+          if (LIdMed <= 0) or (LIdMed <> LIdMedBloqueado) or
+             (LQtd <= 0) or (LQtd > High(Integer)) then
+            raise EErroApi.Create(409, TCodigoErro.EstornoEstoqueInvalido, 'A solicitação não possui medicamento e quantidade válidos para devolver ao estoque.');
+
+          LQry.SQL.Text := 'UPDATE Medicamentos SET quantidadeEstoque = quantidadeEstoque + :qtd ' +
+            'WHERE idMedicamento = :idMed AND quantidadeEstoque >= 0 AND quantidadeEstoque <= :limite';
+          LQry.ParamByName('qtd').AsInteger := Integer(LQtd);
           LQry.ParamByName('idMed').AsInteger := LIdMed;
+          LQry.ParamByName('limite').AsInteger := High(Integer) - Integer(LQtd);
           LQry.ExecSQL;
+          if LQry.RowsAffected <> 1 then
+            raise EErroApi.Create(409, TCodigoErro.EstornoEstoqueInvalido, 'Não foi possível devolver o estoque. Revise o medicamento e o saldo antes de cancelar.');
+        end;
+        LConn.Commit;
+      except
+        on E: EErroApi do
+        begin
+          if LConn.InTransaction then LConn.Rollback;
+          raise;
+        end;
+        on E: Exception do
+        begin
+          if LConn.InTransaction then LConn.Rollback;
+          raise EErroApi.Create(500, TCodigoErro.ErroGravacaoBanco, 'Não foi possível alterar o status da solicitação. Tente novamente.');
         end;
       end;
-
-      // 3. Efetiva a altera��o do pedido
-      LQry.SQL.Text := 'UPDATE Solicitacoes SET status = :status, observacao = :obs WHERE idSolicitacao = :id';
-      LQry.ParamByName('status').AsString := ANovoStatus;
-      LQry.ParamByName('obs').AsString := AObservacao;
-      LQry.ParamByName('id').AsInteger := AId;
-      LQry.ExecSQL;
-
-      LConn.Commit;
-    except
-      LConn.Rollback;
-      raise;
+    finally
+      LQry.Free;
     end;
   finally
-    LQry.Free;
     LConn.Free;
   end;
 end;

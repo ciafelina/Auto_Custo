@@ -69,7 +69,7 @@ async function carregarDadosEstatisticosAdmin() {
     const token = localStorage.getItem('token_jwt');
 
     try {
-        const response = await fetch('http://localhost:9000/admin/dashboard', {
+        const response = await fetch(Api.url('/admin/dashboard'), {
             method: 'GET',
             headers: { 'Authorization': `Bearer ${token}` }
         });
@@ -97,13 +97,18 @@ async function carregarDadosEstatisticosAdmin() {
             if (d.medicamentosZerados && d.medicamentosZerados.length > 0) {
                 alertDiv.classList.remove('hidden'); // Mostra o alerta
                 
-                // Pega os nomes da lista e formata em negrito: "<strong>Aspirina</strong>, <strong>Dipirona</strong>"
-                const nomesFormatados = d.medicamentosZerados.map(nome => `<strong>${nome}</strong>`).join(', ');
-                
-                alertText.innerHTML = `${d.medicamentosZerados.length} medicamento(s) sem estoque disponível: ${nomesFormatados}. Verifique e providencie o reabastecimento.`;
+                alertText.replaceChildren();
+                UI.add(alertText, `${d.medicamentosZerados.length} medicamento(s) sem estoque disponível: `);
+                d.medicamentosZerados.forEach((nome, index) => {
+                    if (index > 0) UI.add(alertText, ', ');
+                    UI.add(alertText, UI.el('strong', '', nome));
+                });
+                UI.add(alertText, '. Verifique e providencie o reabastecimento.');
             } else {
                 alertDiv.classList.add('hidden'); // Esconde o alerta se estiver tudo OK
             }
+        } else {
+            alert(RespostaApi.mensagemErro(result, 'Não foi possível carregar as estatísticas.'));
         }
     } catch (error) {
         console.error('Erro ao carregar estatísticas do admin:', error);

@@ -62,7 +62,7 @@ async function carregarSolicitacoes() {
     const status = document.getElementById('f-status').value;
 
     try {
-        const url = new URL('http://localhost:9000/admin/solicitacoes');
+        const url = new URL(Api.url('/admin/solicitacoes'));
         url.searchParams.append('page', paginaAtual);
         url.searchParams.append('limit', itensPorPagina);
         if (busca) url.searchParams.append('search', busca);
@@ -88,7 +88,7 @@ async function carregarSolicitacoes() {
             document.getElementById('btn-prev-page').disabled = (paginaAtual === 1);
             document.getElementById('btn-next-page').disabled = (paginaAtual === totalPaginas);
 
-            lista.innerHTML = '';
+            lista.replaceChildren();
 
             if (solicitacoes.length === 0) {
                 lista.innerHTML = '<p class="text-center py-4 text-gray-500">Nenhuma solicitação encontrada.</p>';
@@ -109,45 +109,38 @@ async function carregarSolicitacoes() {
                     statusClass = 'status-cancelado'; badgeClass = 'badge-cancelled'; icon = '❌';
                 }
 
-                // Encoda o objeto para passar limpo para o Modal
-                const reqJson = encodeURIComponent(JSON.stringify(req));
-
                 // Botões Rápidos baseados no Status
-                let botoesRapidos = `<button class="btn btn-outline btn-sm" onclick="abrirModalDetalhes('${reqJson}')">🔍 Detalhes</button>`;
+                const botoesRapidos = UI.add(UI.el('div', 'flex gap-2 flex-shrink-0'),
+                    UI.btn('🔍 Detalhes', 'btn btn-outline btn-sm', () => abrirModalDetalhes(req)));
                 if (req.status === 'Pendente') {
-                    botoesRapidos += `
-                        <button class="btn btn-primary btn-sm" onclick="alterarStatus(${req.id}, 'Aprovado')">✅ Aprovar</button>
-                        <button class="btn btn-secondary btn-sm" onclick="alterarStatus(${req.id}, 'Cancelado')">✕ Rejeitar</button>
-                    `;
+                    UI.add(botoesRapidos,
+                        UI.btn('✅ Aprovar', 'btn btn-primary btn-sm', () => alterarStatus(req.id, 'Aprovado')),
+                        UI.btn('✕ Rejeitar', 'btn btn-secondary btn-sm', () => alterarStatus(req.id, 'Cancelado')));
                 } else if (req.status === 'Aprovado') {
-                    botoesRapidos += `<button class="btn btn-primary btn-sm" onclick="alterarStatus(${req.id}, 'Retirado')">📤 Confirmar Retirada</button>`;
+                    UI.add(botoesRapidos, UI.btn('📤 Confirmar Retirada', 'btn btn-primary btn-sm', () => alterarStatus(req.id, 'Retirado')));
                 }
 
-                lista.innerHTML += `
-                    <article class="card request-card ${statusClass} mb-3" role="listitem">
-                      <div class="flex items-center justify-between flex-wrap gap-3">
-                        <div style="flex:1">
-                          <div class="flex items-center gap-3 mb-2 flex-wrap">
-                            <span aria-hidden="true">${icon}</span>
-                            <strong class="text-blue-900">Sol. #${req.id} — ${req.medicamento}</strong>
-                            <span class="badge ${badgeClass}">${req.status}</span>
-                          </div>
-                          <dl class="flex flex-wrap gap-6 text-sm mt-2">
-                            <div><dt class="text-gray-500">Paciente</dt><dd class="font-semibold">${req.nomePaciente}</dd></div>
-                            <div><dt class="text-gray-500">CPF</dt><dd class="font-semibold">${req.cpfPaciente}</dd></div>
-                            <div><dt class="text-gray-500">Quantidade</dt><dd class="font-semibold">${req.quantidade}</dd></div>
-                            <div><dt class="text-gray-500">Solicitado em</dt><dd class="font-semibold">${req.dataSolicitacao}</dd></div>
-                          </dl>
-                        </div>
-                        <div class="flex gap-2 flex-shrink-0">
-                          ${botoesRapidos}
-                        </div>
-                      </div>
-                    </article>
-                `;
+                const card = UI.el('article', `card request-card ${statusClass} mb-3`);
+                card.setAttribute('role', 'listitem');
+                const info = UI.el('div');
+                info.style.flex = '1';
+                const statusIcon = UI.el('span', '', icon);
+                statusIcon.setAttribute('aria-hidden', 'true');
+                UI.add(info,
+                    UI.add(UI.el('div', 'flex items-center gap-3 mb-2 flex-wrap'),
+                        statusIcon,
+                        UI.el('strong', 'text-blue-900', `Sol. #${req.id} — ${req.medicamento}`),
+                        UI.el('span', `badge ${badgeClass}`, req.status)),
+                    UI.add(UI.el('dl', 'flex flex-wrap gap-6 text-sm mt-2'),
+                        UI.detail('Paciente', req.nomePaciente),
+                        UI.detail('CPF', req.cpfPaciente),
+                        UI.detail('Quantidade', req.quantidade),
+                        UI.detail('Solicitado em', req.dataSolicitacao)));
+                UI.add(lista, UI.add(card,
+                    UI.add(UI.el('div', 'flex items-center justify-between flex-wrap gap-3'), info, botoesRapidos)));
             });
         } else {
-            lista.innerHTML = `<p class="text-center py-4 text-red-500">Erro: ${result.mensagem}</p>`;
+            UI.msg(lista, `Erro: ${RespostaApi.mensagemErro(result)}`, { className: 'text-center py-4 text-red-500' });
         }
     } catch (error) {
         lista.innerHTML = '<p class="text-center py-4 text-red-500">Erro de conexão com o servidor.</p>';
@@ -156,7 +149,7 @@ async function carregarSolicitacoes() {
 
 // --- FUNÇÕES DO MODAL E AÇÕES ---
 function abrirModalDetalhes(reqJson) {
-    const req = JSON.parse(decodeURIComponent(reqJson));
+    const req = typeof reqJson === 'string' ? JSON.parse(decodeURIComponent(reqJson)) : reqJson;
     
     document.getElementById('mod-req-id').value = req.id;
     document.getElementById('mod-req-med').textContent = req.medicamento;
@@ -167,12 +160,12 @@ function abrirModalDetalhes(reqJson) {
     let badgeClass = req.status === 'Pendente' ? 'badge-pending' : 
                      req.status === 'Aprovado' ? 'badge-approved' : 
                      req.status === 'Retirado' ? 'badge-withdrawn' : 'badge-cancelled';
-    document.getElementById('mod-req-status').innerHTML = `<span class="badge ${badgeClass}">${req.status}</span>`;
+    document.getElementById('mod-req-status').replaceChildren(UI.el('span', `badge ${badgeClass}`, req.status));
 
     // Histórico de Datas
-    let dates = `Solicitado em: ${req.dataSolicitacao}`;
-    if (req.dataAtualizacao) dates += `<br>Última atualização: ${req.dataAtualizacao}`;
-    document.getElementById('mod-req-dates').innerHTML = dates;
+    const dates = document.getElementById('mod-req-dates');
+    dates.replaceChildren(document.createTextNode(`Solicitado em: ${req.dataSolicitacao}`));
+    if (req.dataAtualizacao) UI.add(dates, UI.el('br'), document.createTextNode(`Última atualização: ${req.dataAtualizacao}`));
 
     // Observação
     const inputObs = document.getElementById('mod-req-obs');
@@ -180,50 +173,60 @@ function abrirModalDetalhes(reqJson) {
     
     // Configura botões do Modal baseado no status
     const divActions = document.getElementById('mod-req-actions');
-    let botoes = `<button type="button" class="btn btn-outline btn-sm" onclick="fecharModal('modal-detail')">Fechar</button>`;
+    const botoes = [UI.btn('Fechar', 'btn btn-outline btn-sm', () => fecharModal('modal-detail'))];
     
     if (req.status === 'Pendente') {
-        botoes += `
-            <button type="button" class="btn btn-primary btn-sm" onclick="alterarStatus(${req.id}, 'Aprovado')">✅ Aprovar</button>
-            <button type="button" class="btn btn-secondary btn-sm" onclick="alterarStatus(${req.id}, 'Cancelado')">✕ Rejeitar</button>
-        `;
+        botoes.push(
+            UI.btn('✅ Aprovar', 'btn btn-primary btn-sm', () => alterarStatus(req.id, 'Aprovado', true)),
+            UI.btn('✕ Rejeitar', 'btn btn-secondary btn-sm', () => alterarStatus(req.id, 'Cancelado', true)));
         inputObs.readOnly = false;
     } else if (req.status === 'Aprovado') {
-        botoes += `<button type="button" class="btn btn-primary btn-sm" onclick="alterarStatus(${req.id}, 'Retirado')">📤 Confirmar Retirada</button>`;
+        botoes.push(UI.btn('📤 Confirmar Retirada', 'btn btn-primary btn-sm', () => alterarStatus(req.id, 'Retirado', true)));
         inputObs.readOnly = false;
     } else {
         inputObs.readOnly = true; // Se já foi finalizado, não edita mais a observação
     }
     
-    divActions.innerHTML = botoes;
+    divActions.replaceChildren(...botoes);
     document.getElementById('modal-detail').classList.remove('hidden');
 }
 
-async function alterarStatus(id, novoStatus) {
+async function alterarStatus(id, novoStatus, usarObservacaoDoModal = false) {
+    const payload = { status: novoStatus };
+    const modal = document.getElementById('modal-detail');
+    const campoId = document.getElementById('mod-req-id');
+    if (usarObservacaoDoModal) {
+        if (modal.classList.contains('hidden') || campoId.value !== String(id)) {
+            alert('Abra os detalhes desta solicitação antes de salvar a observação.');
+            return;
+        }
+        payload.observacao = document.getElementById('mod-req-obs').value;
+    }
+
     let acao = novoStatus === 'Aprovado' ? 'aprovar' : novoStatus === 'Cancelado' ? 'rejeitar' : 'retirar';
     let msgConfirm = `Confirma a ação de ${acao.toUpperCase()} esta solicitação?`;
     
     if (!confirm(msgConfirm)) return;
 
     const token = localStorage.getItem('token_jwt');
-    // Pega a observação (caso o admin tenha digitado o motivo da rejeição no modal)
-    const observacao = document.getElementById('mod-req-obs').value;
 
     try {
-        const response = await fetch(`http://localhost:9000/admin/solicitacoes/${id}/status`, {
+        const response = await fetch(Api.url(`/admin/solicitacoes/${id}/status`), {
             method: 'PATCH',
             headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ status: novoStatus, observacao: observacao })
+            body: JSON.stringify(payload)
         });
 
         const result = await response.json();
 
         if (response.ok && result.sucesso) {
             alert('Status atualizado com sucesso!');
-            fecharModal('modal-detail');
+            if (usarObservacaoDoModal && campoId.value === String(id)) {
+                fecharModal('modal-detail');
+            }
             carregarSolicitacoes(); // Recarrega a lista para mostrar a mudança
         } else {
-            alert('Erro: ' + (result.mensagem || 'Não foi possível alterar o status.'));
+            alert('Erro: ' + RespostaApi.mensagemErro(result, 'Não foi possível alterar o status.'));
         }
     } catch (error) {
         alert('Falha na comunicação com o servidor.');
@@ -233,6 +236,11 @@ async function alterarStatus(id, novoStatus) {
 // --- UTILS ---
 function fecharModal(modalId) {
     document.getElementById(modalId).classList.add('hidden');
+    if (modalId === 'modal-detail') {
+        document.getElementById('mod-req-id').value = '';
+        document.getElementById('mod-req-obs').value = '';
+        document.getElementById('mod-req-actions').replaceChildren();
+    }
 }
 
 // Proteção do Botão Voltar

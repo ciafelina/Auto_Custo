@@ -1,4 +1,4 @@
-unit Controlador_AdminUsuarios;
+Ôªøunit Controlador_AdminUsuarios;
 
 interface
 
@@ -12,6 +12,8 @@ type
   end;
 
 implementation
+
+uses JsonApi;
 
 procedure DoListarUsuarios(Req: THorseRequest; Res: THorseResponse; Next: TProc);
 var
@@ -33,13 +35,13 @@ end;
 
 procedure DoInserirUsuario(Req: THorseRequest; Res: THorseResponse; Next: TProc);
 begin
-  TServicoAdminUsuarios.Inserir(Req.Body<TJSONObject>);
+  TServicoAdminUsuarios.Inserir(LerObjetoJSON(Req));
   Res.Status(201).Send(TJSONObject.Create.AddPair('sucesso', TJSONBool.Create(True)));
 end;
 
 procedure DoAtualizarUsuario(Req: THorseRequest; Res: THorseResponse; Next: TProc);
 begin
-  TServicoAdminUsuarios.Atualizar(Req.Params['cpf'], Req.Body<TJSONObject>);
+  TServicoAdminUsuarios.Atualizar(Req.Params['cpf'], LerObjetoJSON(Req));
   Res.Status(200).Send(TJSONObject.Create.AddPair('sucesso', TJSONBool.Create(True)));
 end;
 
@@ -47,9 +49,9 @@ procedure DoAtualizarCargo(Req: THorseRequest; Res: THorseResponse; Next: TProc)
 var
   LCargo: Integer;
 begin
-  LCargo := Req.Body<TJSONObject>.GetValue<Integer>('idCargo', 0);
+  LCargo := LerObjetoJSON(Req).GetValue<Integer>('idCargo', 0);
   if LCargo = 0 then
-    raise EErroApi.Create(400, TCodigoErro.ParametroAusente, 'Cargo n„o informado.');
+    raise EErroApi.Create(400, TCodigoErro.ParametroAusente, 'Cargo n√£o informado.');
 
   TServicoAdminUsuarios.AtualizarCargo(Req.Params['cpf'], LCargo);
   Res.Status(200).Send(TJSONObject.Create.AddPair('sucesso', TJSONBool.Create(True)));
@@ -59,9 +61,9 @@ procedure DoAtualizarStatus(Req: THorseRequest; Res: THorseResponse; Next: TProc
 var
   LStatus: string;
 begin
-  LStatus := Req.Body<TJSONObject>.GetValue<string>('status', '');
+  LStatus := LerObjetoJSON(Req).GetValue<string>('status', '');
   if LStatus = '' then
-    raise EErroApi.Create(400, TCodigoErro.ParametroAusente, 'Status n„o informado.');
+    raise EErroApi.Create(400, TCodigoErro.ParametroAusente, 'Status n√£o informado.');
 
   TServicoAdminUsuarios.AtualizarStatus(Req.Params['cpf'], LStatus);
   Res.Status(200).Send(TJSONObject.Create.AddPair('sucesso', TJSONBool.Create(True)));

@@ -1,4 +1,4 @@
-unit Controlador_AdminMedicamentos;
+﻿unit Controlador_AdminMedicamentos;
 
 interface
 
@@ -12,6 +12,8 @@ type
   end;
 
 implementation
+
+uses JsonApi;
 
 procedure DoListar(Req: THorseRequest; Res: THorseResponse; Next: TProc);
 var
@@ -31,7 +33,7 @@ end;
 
 procedure DoInserir(Req: THorseRequest; Res: THorseResponse; Next: TProc);
 begin
-  TServicoAdminMedicamentos.Inserir(Req.Body<TJSONObject>);
+  TServicoAdminMedicamentos.Inserir(LerObjetoJSON(Req));
   Res.Status(201).Send(TJSONObject.Create.AddPair('sucesso', TJSONBool.Create(True)));
 end;
 
@@ -40,7 +42,7 @@ var
   LId: Integer;
 begin
   LId := StrToIntDef(Req.Params['id'], 0);
-  TServicoAdminMedicamentos.Atualizar(LId, Req.Body<TJSONObject>);
+  TServicoAdminMedicamentos.Atualizar(LId, LerObjetoJSON(Req));
   Res.Status(200).Send(TJSONObject.Create.AddPair('sucesso', TJSONBool.Create(True)));
 end;
 
@@ -49,7 +51,7 @@ var
   LId, LQuantidade: Integer;
 begin
   LId := StrToIntDef(Req.Params['id'], 0);
-  LQuantidade := Req.Body<TJSONObject>.GetValue<Integer>('estoque', 0);
+  LQuantidade := LerObjetoJSON(Req).GetValue<Integer>('estoque', 0);
 
   TServicoAdminMedicamentos.AtualizarEstoque(LId, LQuantidade);
   Res.Status(200).Send(TJSONObject.Create.AddPair('sucesso', TJSONBool.Create(True)));

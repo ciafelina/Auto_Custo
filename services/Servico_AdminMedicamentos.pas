@@ -1,9 +1,9 @@
-unit Servico_AdminMedicamentos;
+Ôªøunit Servico_AdminMedicamentos;
 
 interface
 
 uses
-  System.SysUtils, Data.DB, FireDAC.Comp.Client, Conexao, System.JSON, Excecoes, Mensagens;
+  System.SysUtils, Data.DB, FireDAC.Comp.Client, FireDAC.Stan.Param, FireDAC.Stan.Option, Conexao, System.JSON, Excecoes, Mensagens;
 
 type
   TServicoAdminMedicamentos = class
@@ -37,7 +37,7 @@ begin
     else
       LFiltroBusca := '%';
 
-    // 1. Pega o Total (Para a paginaÁ„o do site)
+    // 1. Pega o Total (Para a pagina√ß√£o do site)
     LQry.SQL.Text := 'SELECT COUNT(*) as Total FROM Medicamentos WHERE nome LIKE :Busca OR categoria LIKE :Busca';
     LQry.ParamByName('Busca').AsString := LFiltroBusca;
     LQry.Open;
@@ -116,7 +116,7 @@ begin
   try
     LQry.Connection := LConn;
     LQry.SQL.Add('UPDATE Medicamentos SET nome = :nome, categoria = :categoria, dosagem = :dosagem, ');
-    LQry.SQL.Add('fabricante = :fabricante, quantidadeEstoque = :estoque, estoqueMinimo = :minimo, descricao = :descricao ');
+    LQry.SQL.Add('fabricante = :fabricante, estoqueMinimo = :minimo, descricao = :descricao ');
     LQry.SQL.Add('WHERE idMedicamento = :id');
 
     LQry.ParamByName('id').AsInteger := AId;
@@ -124,7 +124,6 @@ begin
     LQry.ParamByName('categoria').AsString := AJson.GetValue<string>('categoria', '');
     LQry.ParamByName('dosagem').AsString := AJson.GetValue<string>('dosagem', '');
     LQry.ParamByName('fabricante').AsString := AJson.GetValue<string>('fabricante', '');
-    LQry.ParamByName('estoque').AsInteger := AJson.GetValue<Integer>('estoque', 0);
     LQry.ParamByName('minimo').AsInteger := AJson.GetValue<Integer>('estoqueMinimo', 0);
     LQry.ParamByName('descricao').AsString := AJson.GetValue<string>('descricao', '');
 
@@ -158,44 +157,55 @@ class procedure TServicoAdminMedicamentos.Excluir(AId: Integer);
 var
   LConn: TFDConnection;
   LQry: TFDQuery;
-  LQtdProcesso: Integer;
 begin
+  if AId <= 0 then
+    raise EErroApi.Create(400, TCodigoErro.RequisicaoInvalida, 'Identificador do medicamento inv√°lido.');
   LConn := TProvedorConexao.ObterConexao;
-  LQry := TFDQuery.Create(nil);
   try
-    LQry.Connection := LConn;
-
-    // 1. Verifica a regra de negÛcio: Tem alguma solicitaÁ„o em andamento?
-    LQry.SQL.Text := 'SELECT COUNT(*) AS Qtd FROM Solicitacoes WHERE IdMedicamento = :id AND status IN (''Pendente'', ''Aprovado'')';
-    LQry.ParamByName('id').AsInteger := AId;
-    LQry.Open;
-    LQtdProcesso := LQry.FieldByName('Qtd').AsInteger;
-    LQry.Close;
-
-    // Se tiver alguma em andamento, explode o erro e bloqueia na hora!
-    if LQtdProcesso > 0 then
-      raise EErroApi.Create(400, TCodigoErro.RequisicaoInvalida, 'N„o pode ser excluÌdo. Este medicamento possui solicitaÁıes Pendentes ou Aprovadas.');
-
-    // 2. Se passou, podemos excluir! Vamos usar transaÁ„o para garantir que n„o quebre nada.
-    LConn.StartTransaction;
+    LQry := TFDQuery.Create(nil);
     try
-      // Desvincula o histÛrico antigo (Retirados/Cancelados) para o banco n„o dar erro de Chave Estrangeira
-      LQry.SQL.Text := 'UPDATE Solicitacoes SET IdMedicamento = NULL WHERE IdMedicamento = :id';
-      LQry.ParamByName('id').AsInteger := AId;
-      LQry.ExecSQL;
-
-      // Agora sim, exclui o medicamento fisicamente
-      LQry.SQL.Text := 'DELETE FROM Medicamentos WHERE idMedicamento = :id';
-      LQry.ParamByName('id').AsInteger := AId;
-      LQry.ExecSQL;
-
-      LConn.Commit;
-    except
-      LConn.Rollback;
-      raise;
+      LQry.Connection := LConn;
+      LConn.TxOptions.Isolation := xiSerializible;
+      LConn.StartTransaction;
+      try
+        // Obter o bloqueio exclusivo antes de consultar o hist√≥rico evita
+        // promover um bloqueio compartilhado enquanto um pedido reserva saldo.
+        LQry.SQL.Text := 'SELECT idMedicamento FROM Medicamentos WITH (XLOCK, HOLDLOCK) WHERE idMedicamento = :id';
+        LQry.ParamByName('id').AsInteger := AId;
+        LQry.Open;
+        if LQry.IsEmpty then
+          raise EErroApi.Create(404, TCodigoErro.RecursoNaoEncontrado, 'Medicamento n√£o encontrado.');
+        LQry.Close;
+        LQry.SQL.Text := 'SELECT COUNT(*) AS Qtd FROM Solicitacoes WHERE IdMedicamento = :id';
+        LQry.ParamByName('id').AsInteger := AId;
+        LQry.Open;
+        if LQry.FieldByName('Qtd').AsInteger > 0 then
+          raise EErroApi.Create(409, TCodigoErro.HistoricoVinculado, 'O medicamento possui solicita√ß√µes vinculadas e n√£o pode ser exclu√≠do. O cadastro e o hist√≥rico foram preservados.');
+        LQry.Close;
+        // Manter o v√≠nculo de todos os pedidos, inclusive os finalizados.
+        LQry.SQL.Text := 'DELETE FROM Medicamentos WHERE idMedicamento = :id ' +
+          'AND NOT EXISTS (SELECT 1 FROM Solicitacoes WHERE IdMedicamento = :id)';
+        LQry.ParamByName('id').AsInteger := AId;
+        LQry.ExecSQL;
+        if LQry.RowsAffected <> 1 then
+          raise EErroApi.Create(409, TCodigoErro.HistoricoVinculado, 'O medicamento n√£o pode ser exclu√≠do enquanto houver solicita√ß√µes vinculadas.');
+        LConn.Commit;
+      except
+        on E: EErroApi do
+        begin
+          if LConn.InTransaction then LConn.Rollback;
+          raise;
+        end;
+        on E: Exception do
+        begin
+          if LConn.InTransaction then LConn.Rollback;
+          raise EErroApi.Create(500, TCodigoErro.ErroGravacaoBanco, 'N√£o foi poss√≠vel excluir o medicamento. Nenhum hist√≥rico foi removido.');
+        end;
+      end;
+    finally
+      LQry.Free;
     end;
   finally
-    LQry.Free;
     LConn.Free;
   end;
 end;

@@ -64,7 +64,7 @@ async function carregarDashboard() {
 
     // 4. Busca os Dados na API
     try {
-        const response = await fetch(`http://localhost:9000/dashboard/paciente/${cpf}?page=${paginaAtual}&limit=${itensPorPagina}`, {
+        const response = await fetch(Api.url(`/dashboard/paciente/${cpf}?page=${paginaAtual}&limit=${itensPorPagina}`), {
             method: 'GET',
             headers: { 'Authorization': `Bearer ${token}` }
         });
@@ -94,16 +94,16 @@ async function carregarDashboard() {
             document.getElementById('btn-prev').disabled = (paginaAtual === 1);
             document.getElementById('btn-next').disabled = (qtdSolicitacoes < itensPorPagina);
 
-            lista.innerHTML = ''; 
+            lista.replaceChildren();
 
             // --- NOVA LÓGICA DE TELA VAZIA ---
             if (qtdSolicitacoes === 0) {
                 if (d.total === 0) {
                     // Se o total no banco for 0, o usuário nunca fez pedidos
                     lista.innerHTML = `
-                        <div class="text-center p-6 border border-dashed border-gray-300" style="border-radius: 8px; background-color: #f9fafb;">
+                        <div class="text-center p-6 border border-dashed border-gray-300" style="border-radius: 8px; background-color: var(--bg-subtle);">
                             <p class="text-gray-600 mb-2 font-medium">Você ainda não tem nenhuma solicitação.</p>
-                            <a href="stock.html" class="text-blue-600 hover:text-blue-800 font-semibold" style="text-decoration: underline;">
+                            <a href="stock.html" class="text-blue-900 font-semibold" style="text-decoration: underline;">
                                 Ir para o Estoque →
                             </a>
                         </div>
@@ -117,44 +117,41 @@ async function carregarDashboard() {
 
             // Se tem dados, desenha os cards
             d.solicitacoes.forEach(s => {
-                let badgeClass = '', statusClass = '', icon = '', extraInfo = '', btnAction = '';
+                let badgeClass = '', statusClass = '', icon = '';
+                let extraInfo = null, btnAction = null;
 
                 if (s.status === 'Aprovado') {
                     statusClass = 'status-aprovado'; badgeClass = 'badge-approved'; icon = '✅';
-                    btnAction = `<button class="btn btn-primary btn-sm flex-shrink-0" onclick="confirmarRetirada(${s.id})">Confirmar Retirada</button>`;
+                    btnAction = UI.btn('Confirmar Retirada', 'btn btn-primary btn-sm flex-shrink-0', () => confirmarRetirada(s.id));
                 } else if (s.status === 'Pendente') {
                     statusClass = 'status-pendente'; badgeClass = 'badge-pending'; icon = '⏳';
-                    extraInfo = `<p class="text-sm text-gray-600 mt-2">Aguardando análise da farmácia.</p>`;
+                    extraInfo = UI.el('p', 'text-sm text-gray-600 mt-2', 'Aguardando análise da farmácia.');
                 } else if (s.status === 'Retirado') {
                     statusClass = 'status-retirado'; badgeClass = 'badge-withdrawn'; icon = '📤';
                 } else {
                     statusClass = 'status-cancelado'; badgeClass = 'badge-cancelled'; icon = '❌';
                 }
                 
-                lista.innerHTML += `
-                    <article class="card request-card ${statusClass} mb-3">
-                      <div class="flex items-center justify-between flex-wrap gap-3">
-                        <div style="flex:1">
-                          <div class="flex items-center gap-3 mb-2 flex-wrap">
-                            <span aria-hidden="true">${icon}</span>
-                            <strong class="text-blue-900">${s.medicamento}</strong>
-                            <span class="badge ${badgeClass}">${s.status}</span>
-                          </div>
-                          <dl class="flex flex-wrap gap-6 text-sm mt-2">
-                            <div><dt class="text-gray-500">Nº Pedido</dt><dd class="font-semibold">#${s.id}</dd></div>
-                            <div><dt class="text-gray-500">Qtd</dt><dd class="font-semibold">${s.quantidade}</dd></div>
-                            <div><dt class="text-gray-500">Data</dt><dd class="font-semibold">${s.data}</dd></div>
-                          </dl>
-                          ${extraInfo}
-                        </div>
-                        ${btnAction}
-                      </div>
-                    </article>
-                `;
+                const info = UI.el('div');
+                info.style.flex = '1';
+                const statusIcon = UI.el('span', '', icon);
+                statusIcon.setAttribute('aria-hidden', 'true');
+                UI.add(info,
+                    UI.add(UI.el('div', 'flex items-center gap-3 mb-2 flex-wrap'),
+                        statusIcon,
+                        UI.el('strong', 'text-blue-900', s.medicamento),
+                        UI.el('span', `badge ${badgeClass}`, s.status)),
+                    UI.add(UI.el('dl', 'flex flex-wrap gap-6 text-sm mt-2'),
+                        UI.detail('Nº Pedido', `#${s.id}`),
+                        UI.detail('Qtd', s.quantidade),
+                        UI.detail('Data', s.data)),
+                    extraInfo);
+                UI.add(lista, UI.add(UI.el('article', `card request-card ${statusClass} mb-3`),
+                    UI.add(UI.el('div', 'flex items-center justify-between flex-wrap gap-3'), info, btnAction)));
             });
         } else {
             // Se a API não voltar sucesso, tira o "carregando" e avisa o erro
-            lista.innerHTML = '<p class="text-red-500 mt-4">Nenhum dado encontrado.</p>';
+            UI.msg(lista, RespostaApi.mensagemErro(result), {className: 'text-red-500 mt-4'});
         }
     } catch (error) { 
         console.error("Erro na API: ", error); 
@@ -168,7 +165,7 @@ async function confirmarRetirada(id) {
 
     const token = localStorage.getItem('token_jwt');
     try {
-        const response = await fetch(`http://localhost:9000/solicitacoes/${id}/retirada`, {
+        const response = await fetch(Api.url(`/solicitacoes/${id}/retirada`), {
             method: 'PATCH', 
             headers: { 'Authorization': `Bearer ${token}` }
         });
@@ -176,6 +173,8 @@ async function confirmarRetirada(id) {
         if (response.ok) {
             alert('Retirada confirmada com sucesso!');
             carregarDashboard(); 
+        } else {
+            alert(await RespostaApi.lerErro(response, 'Não foi possível confirmar a retirada.'));
         }
     } catch (error) { alert('Erro ao confirmar retirada.'); }
 }

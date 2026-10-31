@@ -1,9 +1,9 @@
-unit Controlador_Solicitacao;
+Ôªøunit Controlador_Solicitacao;
 
 interface
 
 uses
-  Horse, System.JSON, System.SysUtils, Servico_Solicitacao, Excecoes, Mensagens;
+  Horse, System.JSON, System.SysUtils, Servico_Solicitacao, Autenticacao, Excecoes, Mensagens;
 
 type
   TControladorSolicitacao = class
@@ -13,37 +13,55 @@ type
 
 implementation
 
+function LerInteiroPositivo(ACorpo: TJSONObject; const ACampo: string): Integer;
+var
+  LValor: TJSONValue;
+  LCodigo: string;
+begin
+  LValor := ACorpo.GetValue(ACampo);
+  if not Assigned(LValor) then
+    raise EErroApi.Create(400, TCodigoErro.ParametroAusente, 'O campo ' + ACampo + ' √© obrigat√≥rio.');
+  if ACampo = 'quantidade' then
+    LCodigo := TCodigoErro.QuantidadeInvalida
+  else
+    LCodigo := TCodigoErro.RequisicaoInvalida;
+  if not (LValor is TJSONNumber) then
+    raise EErroApi.Create(400, LCodigo, 'O campo ' + ACampo + ' deve ser um n√∫mero inteiro maior que zero.');
+  if not TryStrToInt(LValor.Value, Result) or (Result <= 0) then
+    raise EErroApi.Create(400, LCodigo, 'O campo ' + ACampo + ' deve ser um n√∫mero inteiro maior que zero dentro do limite permitido.');
+end;
+
 procedure DoConfirmarRetirada(Req: THorseRequest; Res: THorseResponse; Next: TProc);
 var
   LId: Integer;
 begin
   LId := StrToIntDef(Req.Params['id'], 0);
-  TServicoSolicitacao.ConfirmarRetirada(LId);
+  TServicoSolicitacao.ConfirmarRetirada(LId, ValidarToken(Req).UsuarioCPF);
   Res.Status(204).Send('');
 end;
 
 procedure DoNovaSolicitacao(Req: THorseRequest; Res: THorseResponse; Next: TProc);
 var
+  LJSON: TJSONValue;
   LBody: TJSONObject;
   LCPF: string;
   LQuantidade, LIdMedicamento: Integer;
 begin
-  LBody := Req.Body<TJSONObject>;
-
+  LJSON := Req.Body<TJSONValue>;
+  if not (LJSON is TJSONObject) then
+    raise EErroApi.Create(400, TCodigoErro.RequisicaoInvalida, 'O corpo da requisi√ß√£o deve ser um objeto JSON.');
+  LBody := TJSONObject(LJSON);
   LCPF := LBody.GetValue<string>('cpf', '');
-  LQuantidade := LBody.GetValue<Integer>('quantidade', 1);
-  LIdMedicamento := LBody.GetValue<Integer>('idMedicamento', 0);
-
-  if (LCPF = '') or (LIdMedicamento = 0) then
-    raise EErroApi.Create(400, TCodigoErro.ParametroAusente, 'Dados do medicamento inv·lidos.');
-
-  // Chama a nova vers„o do serviÁo (sem a string do nome)
+  ExigirTitular(Req, LCPF);
+  LCPF := ValidarToken(Req).UsuarioCPF;
+  LQuantidade := LerInteiroPositivo(LBody, 'quantidade');
+  LIdMedicamento := LerInteiroPositivo(LBody, 'idMedicamento');
   TServicoSolicitacao.NovaSolicitacao(LCPF, LQuantidade, LIdMedicamento);
 
   Res.Status(201).Send(
     TJSONObject.Create
       .AddPair('sucesso', TJSONBool.Create(True))
-      .AddPair('mensagem', 'SolicitaÁ„o enviada com sucesso!')
+      .AddPair('mensagem', 'Solicita√ß√£o enviada com sucesso!')
   );
 end;
 

@@ -97,7 +97,7 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         try {
-            const response = await fetch('http://localhost:9000/usuarios', {
+            const response = await fetch(Api.url('/usuarios'), {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -111,7 +111,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 alert('Cadastro realizado com sucesso!');
                 window.location.href = 'login.html'; 
             } else {
-                alert(data.mensagem || 'Erro ao processar cadastro. Verifique os dados.');
+                alert(RespostaApi.mensagemErro(data, 'Erro ao processar cadastro. Verifique os dados.'));
             }
 
         } catch (error) {

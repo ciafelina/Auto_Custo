@@ -105,6 +105,8 @@
         <DCCReference Include="utils\Excecoes.pas"/>
         <DCCReference Include="utils\Mensagens.pas"/>
         <DCCReference Include="utils\Secrets.pas"/>
+        <DCCReference Include="utils\Estoque.pas"/>
+        <DCCReference Include="utils\JsonApi.pas"/>
         <DCCReference Include="controllers\Controlador_Usuario.pas"/>
         <DCCReference Include="services\Servico_Usuario.pas"/>
         <DCCReference Include="services\Servico_Documento.pas"/>

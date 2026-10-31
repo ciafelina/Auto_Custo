@@ -1,10 +1,10 @@
-unit Servico_Usuario;
+Ôªøunit Servico_Usuario;
 
 interface
 
 uses
-  System.SysUtils, FireDAC.Comp.Client, FireDAC.DApt, BCrypt, System.JSON,
-  Conexao, Excecoes, Mensagens;
+  System.SysUtils, FireDAC.Comp.Client, FireDAC.Stan.Param, FireDAC.Stan.Option, FireDAC.DApt, BCrypt, System.JSON,
+  Conexao, Excecoes, Mensagens, FireDAC.Stan.Error;
 
 type
   TServicoUsuario = class
@@ -26,7 +26,7 @@ var
   LQry: TFDQuery;
   LHash, LCPFLimpo: string;
 begin
-  // Remove qualquer ponto ou traÁo
+  // Remove qualquer ponto ou tra√ßo
   LCPFLimpo := StringReplace(ACPF, '.', '', [rfReplaceAll]);
   LCPFLimpo := StringReplace(LCPFLimpo, '-', '', [rfReplaceAll]);
   LConn := TProvedorConexao.ObterConexao;
@@ -90,12 +90,12 @@ begin
     try
       LQry.ExecSQL;
     except
-      on E: Exception do
+      on E: EFDDBEngineException do
       begin
-        if Pos('PRIMARY KEY', E.Message) > 0 then
-          raise EErroApi.Create(400, TCodigoErro.RequisicaoInvalida, 'Este CPF j· est· cadastrado.')
+        if E.Kind = ekUKViolated then
+          raise EErroApi.Create(400, TCodigoErro.CpfDuplicado, 'Este CPF j√° est√° cadastrado.')
         else
-          raise EErroApi.Create(500, TCodigoErro.ErroInterno, 'Erro ao salvar usu·rio: ' + E.Message);
+          raise EErroApi.Create(500, TCodigoErro.ErroGravacaoBanco, 'N√£o foi poss√≠vel cadastrar o usu√°rio. Tente novamente.');
       end;
     end;
   finally
@@ -108,49 +108,58 @@ class procedure TServicoUsuario.ExcluirConta(const ACPF: string);
 var
   LConn: TFDConnection;
   LQry: TFDQuery;
+  LCPF: Int64;
   LCPFLimpo: string;
-  LQtdAtivas: Integer;
 begin
-  // Remove pontos e traÁos do CPF
-  LCPFLimpo := StringReplace(ACPF, '.', '', [rfReplaceAll]);
-  LCPFLimpo := StringReplace(LCPFLimpo, '-', '', [rfReplaceAll]);
-
+  LCPFLimpo := ACPF.Replace('.', '').Replace('-', '');
+  if not TryStrToInt64(LCPFLimpo, LCPF) or (LCPF <= 0) then
+    raise EErroApi.Create(400, TCodigoErro.CpfInvalido, 'CPF inv√°lido.');
   LConn := TProvedorConexao.ObterConexao;
-  LQry := TFDQuery.Create(nil);
   try
-    LQry.Connection := LConn;
-
-    // 1. REGRA DE NEG”CIO: O paciente tem solicitaÁıes em andamento?
-    LQry.SQL.Text := 'SELECT COUNT(*) AS Qtd FROM Solicitacoes WHERE idUsuarioCPF = :cpf AND status IN (''Pendente'', ''Aprovado'')';
-    LQry.ParamByName('cpf').AsLargeInt := StrToInt64Def(LCPFLimpo, 0);
-    LQry.Open;
-    LQtdAtivas := LQry.FieldByName('Qtd').AsInteger;
-    LQry.Close;
-
-    if LQtdAtivas > 0 then
-      raise EErroApi.Create(400, TCodigoErro.RequisicaoInvalida, 'N„o È possÌvel excluir a conta. VocÍ possui solicitaÁıes em andamento. Cancele-as ou aguarde a finalizaÁ„o.');
-
-    // 2. EXCLUS√O COM TRANSA«√O (Protege o banco)
-    LConn.StartTransaction;
+    LQry := TFDQuery.Create(nil);
     try
-      // Passo A: Apaga o histÛrico de solicitaÁıes antigas (Retiradas/Canceladas) para evitar erro de Chave Estrangeira
-      LQry.SQL.Text := 'DELETE FROM Solicitacoes WHERE idUsuarioCPF = :cpf';
-      LQry.ParamByName('cpf').AsLargeInt := StrToInt64Def(LCPFLimpo, 0);
-      LQry.ExecSQL;
-
-      // Passo B: Exclui a conta do usu·rio
-      LQry.SQL.Text := 'DELETE FROM Usuarios WHERE idUsuarioCPF = :cpf';
-      LQry.ParamByName('cpf').AsLargeInt := StrToInt64Def(LCPFLimpo, 0);
-      LQry.ExecSQL;
-
-      LConn.Commit;
-    except
-      LConn.Rollback;
-      raise;
+      LQry.Connection := LConn;
+      LConn.TxOptions.Isolation := xiSerializible;
+      LConn.StartTransaction;
+      try
+        // Reservar a exclus√£o antes de consultar o hist√≥rico impede promo√ß√£o
+        // concorrente de locks compartilhados durante a cria√ß√£o de um pedido.
+        LQry.SQL.Text := 'SELECT idUsuarioCPF FROM Usuarios WITH (XLOCK, HOLDLOCK) WHERE idUsuarioCPF = :cpf';
+        LQry.ParamByName('cpf').AsLargeInt := LCPF;
+        LQry.Open;
+        if LQry.IsEmpty then
+          raise EErroApi.Create(404, TCodigoErro.RecursoNaoEncontrado, 'Conta n√£o encontrada.');
+        LQry.Close;
+        LQry.SQL.Text := 'SELECT COUNT(*) AS Qtd FROM Solicitacoes WHERE idUsuarioCPF = :cpf';
+        LQry.ParamByName('cpf').AsLargeInt := LCPF;
+        LQry.Open;
+        if LQry.FieldByName('Qtd').AsInteger > 0 then
+          raise EErroApi.Create(409, TCodigoErro.HistoricoVinculado, 'A conta possui solicita√ß√µes vinculadas e n√£o pode ser exclu√≠da. O hist√≥rico foi preservado. Para encerrar o acesso, solicite a desativa√ß√£o.');
+        LQry.Close;
+        // Nunca apagar solicita√ß√µes para permitir a exclus√£o do cadastro.
+        LQry.SQL.Text := 'DELETE FROM Usuarios WHERE idUsuarioCPF = :cpf ' +
+          'AND NOT EXISTS (SELECT 1 FROM Solicitacoes WHERE idUsuarioCPF = :cpf)';
+        LQry.ParamByName('cpf').AsLargeInt := LCPF;
+        LQry.ExecSQL;
+        if LQry.RowsAffected <> 1 then
+          raise EErroApi.Create(409, TCodigoErro.HistoricoVinculado, 'A conta n√£o pode ser exclu√≠da enquanto houver solicita√ß√µes vinculadas.');
+        LConn.Commit;
+      except
+        on E: EErroApi do
+        begin
+          if LConn.InTransaction then LConn.Rollback;
+          raise;
+        end;
+        on E: Exception do
+        begin
+          if LConn.InTransaction then LConn.Rollback;
+          raise EErroApi.Create(500, TCodigoErro.ErroGravacaoBanco, 'N√£o foi poss√≠vel excluir a conta. Nenhum hist√≥rico foi removido.');
+        end;
+      end;
+    finally
+      LQry.Free;
     end;
-
   finally
-    LQry.Free;
     LConn.Free;
   end;
 end;
@@ -161,7 +170,7 @@ var
   LQry: TFDQuery;
   LCPFLimpo: string;
 begin
-  // Limpa o CPF para garantir que sÛ chegue n˙meros na query
+  // Limpa o CPF para garantir que s√≥ chegue n√∫meros na query
   LCPFLimpo := StringReplace(ACPF, '.', '', [rfReplaceAll]);
   LCPFLimpo := StringReplace(LCPFLimpo, '-', '', [rfReplaceAll]);
 
@@ -170,24 +179,24 @@ begin
   try
     LQry.Connection := LConn;
 
-    // A M¡GICA EST¡ AQUI: Usamos CONVERT no SQL Server. O "23" garante o formato YYYY-MM-DD.
+    // A M√ÅGICA EST√Å AQUI: Usamos CONVERT no SQL Server. O "23" garante o formato YYYY-MM-DD.
     LQry.SQL.Add('SELECT idUsuarioCPF, nomeUsuario, email, telefone, endereco, dadosSaude, ');
     LQry.SQL.Add('CONVERT(VARCHAR(10), dataNascimento, 23) AS dataFormatada ');
     LQry.SQL.Add('FROM Usuarios WHERE idUsuarioCPF = :CPF');
 
-    // Passa o CPF como n˙mero seguro
+    // Passa o CPF como n√∫mero seguro
     LQry.ParamByName('CPF').AsLargeInt := StrToInt64Def(LCPFLimpo, 0);
     LQry.Open;
 
     if LQry.IsEmpty then
-      raise EErroApi.Create(404, TCodigoErro.RecursoNaoEncontrado, 'Usu·rio n„o encontrado.');
+      raise EErroApi.Create(404, TCodigoErro.RecursoNaoEncontrado, 'Usu√°rio n√£o encontrado.');
 
     Result := TJSONObject.Create;
     Result.AddPair('cpf', LQry.FieldByName('idUsuarioCPF').AsString);
     Result.AddPair('nomeCompleto', LQry.FieldByName('nomeUsuario').AsString);
     Result.AddPair('email', LQry.FieldByName('email').AsString);
 
-    // Pegamos a data j· formatada como String pura! Fim dos crashes de convers„o de data!
+    // Pegamos a data j√° formatada como String pura! Fim dos crashes de convers√£o de data!
     Result.AddPair('dataNascimento', LQry.FieldByName('dataFormatada').AsString);
 
     Result.AddPair('telefone', LQry.FieldByName('telefone').AsString);

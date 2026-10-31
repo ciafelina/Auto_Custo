@@ -4,9 +4,11 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Painel de controle — Medicamentos de Alto Custo</title>
+  <script src="js/theme.js"></script>
   <link rel="stylesheet" href="css/style.css"/>
 </head>
 <body>
+<a class="skip-link" href="#main-content">Pular para o conteúdo principal</a>
 
 <div id="mob-overlay" aria-hidden="true"></div>
 
@@ -58,7 +60,7 @@
 </header>
 
 <!-- ═══ MAIN ═══ -->
-<main id="main">
+<main id="main" tabindex="-1"><span id="main-content" tabindex="-1"></span>
 
   <div class="page-header">
     <div class="page-header-text">
@@ -138,7 +140,11 @@
 
 </main>
 
+<script src="config.js"></script>
+<script src="js/api-client.js"></script>
+<script src="js/api-response.js"></script>
+<script src="js/ui-safe.js"></script>
 <script src="js/dashboard.js"></script>
-
+<script src="js/accessibility.js"></script>
 </body>
 </html>

@@ -1,9 +1,9 @@
-unit Controlador_Usuario;
+Ôªøunit Controlador_Usuario;
 
 interface
 
 uses
-  Horse, System.JSON, System.SysUtils, Servico_Usuario, Excecoes, Mensagens;
+  Horse, System.JSON, System.SysUtils, Servico_Usuario, Autenticacao, Excecoes, Mensagens;
 
 type
   TControladorUsuario = class
@@ -13,6 +13,8 @@ type
 
 implementation
 
+uses JsonApi;
+
 
 
 procedure DoObterPerfil(Req: THorseRequest; Res: THorseResponse; Next: TProc);
@@ -21,8 +23,10 @@ var
   LJSON: TJSONObject;
 begin
   LCPF := Req.Params['cpf'];
+  ExigirTitular(Req, LCPF);
+  LCPF := ValidarToken(Req).UsuarioCPF;
   if LCPF = '' then
-    raise EErroApi.Create(400, TCodigoErro.ParametroAusente, 'CPF n„o informado.');
+    raise EErroApi.Create(400, TCodigoErro.ParametroAusente, 'CPF n√£o informado.');
   LJSON := TServicoUsuario.ObterPorCPF(LCPF);
   Res.Status(200).Send(
     TJSONObject.Create
@@ -36,9 +40,9 @@ var
   LBody: TJSONObject;
   LCPF, LNome, LEmail, LDataNascimento, LTelefone, LEndereco, LDadosSaude, LSenha: string;
 begin
-  LBody := Req.Body<TJSONObject>;
+  LBody := LerObjetoJSON(Req);
   if (not Assigned(LBody)) or (LBody.Count = 0) then
-    raise EErroApi.Create(400, TCodigoErro.RequisicaoInvalida, 'Corpo da requisiÁ„o vazio.');
+    raise EErroApi.Create(400, TCodigoErro.RequisicaoInvalida, 'Corpo da requisi√ß√£o vazio.');
   LCPF            := LBody.GetValue<string>('cpf', '');
   LNome           := LBody.GetValue<string>('nomeCompleto', '');
   LEmail          := LBody.GetValue<string>('email', '');
@@ -47,16 +51,16 @@ begin
   LEndereco       := LBody.GetValue<string>('endereco', '');
   LDadosSaude     := LBody.GetValue<string>('dadosSaude', '');
   LSenha          := LBody.GetValue<string>('senha', '');
-  // ValidaÁıes b·sicas e obrigatÛrias
-  if LCPF = ''   then raise EErroApi.Create(400, TCodigoErro.ParametroAusente, 'CPF È obrigatÛrio.');
-  if LNome = ''  then raise EErroApi.Create(400, TCodigoErro.ParametroAusente, 'Nome È obrigatÛrio.');
-  if LSenha = '' then raise EErroApi.Create(400, TCodigoErro.ParametroAusente, 'Senha È obrigatÛria.');
-  // Repassa tudo para o ServiÁo
+  // Valida√ß√µes b√°sicas e obrigat√≥rias
+  if LCPF = ''   then raise EErroApi.Create(400, TCodigoErro.ParametroAusente, 'CPF √© obrigat√≥rio.');
+  if LNome = ''  then raise EErroApi.Create(400, TCodigoErro.ParametroAusente, 'Nome √© obrigat√≥rio.');
+  if LSenha = '' then raise EErroApi.Create(400, TCodigoErro.ParametroAusente, 'Senha √© obrigat√≥ria.');
+  // Repassa tudo para o Servi√ßo
   TServicoUsuario.Cadastrar(LCPF, LNome, LEmail, LDataNascimento, LTelefone, LEndereco, LDadosSaude, LSenha);
   Res.Status(201).Send(
     TJSONObject.Create
       .AddPair('sucesso', TJSONBool.Create(True))
-      .AddPair('mensagem', 'Usu·rio cadastrado com sucesso!')
+      .AddPair('mensagem', 'Usu√°rio cadastrado com sucesso!')
   );
 end;
 
@@ -66,7 +70,9 @@ var
   LCPF: string;
 begin
   LCPF := Req.Params['cpf'];
-  LBody := Req.Body<TJSONObject>;
+  ExigirTitular(Req, LCPF);
+  LCPF := ValidarToken(Req).UsuarioCPF;
+  LBody := LerObjetoJSON(Req);
   TServicoUsuario.AtualizarPerfil(
     LCPF,
     LBody.GetValue<string>('telefone', ''),
@@ -85,13 +91,15 @@ var
   LCPF: string;
 begin
   LCPF := Req.Params['cpf'];
+  ExigirTitular(Req, LCPF);
+  LCPF := ValidarToken(Req).UsuarioCPF;
 
   if LCPF = '' then
-    raise EErroApi.Create(400, TCodigoErro.ParametroAusente, 'CPF n„o informado.');
+    raise EErroApi.Create(400, TCodigoErro.ParametroAusente, 'CPF n√£o informado.');
 
   TServicoUsuario.ExcluirConta(LCPF);
 
-  // Retorna 204 (No Content), que significa: Deu certo e n„o tem mensagem de volta.
+  // Retorna 204 (No Content), que significa: Deu certo e n√£o tem mensagem de volta.
   Res.Status(204).Send('');
 end;
 

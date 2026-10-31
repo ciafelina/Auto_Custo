@@ -4,9 +4,11 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Solicitações — Medicamentos de Alto Custo</title>
+  <script src="js/theme.js"></script>
   <link rel="stylesheet" href="css/style.css"/>
 </head>
 <body>
+<a class="skip-link" href="#main-content">Pular para o conteúdo principal</a>
 
 <div id="mob-overlay" aria-hidden="true"></div>
 
@@ -62,7 +64,7 @@
   <time id="data-atual" class="text-sm text-gray-500"></time>
 </header>
 
-<main id="main">
+<main id="main" tabindex="-1"><span id="main-content" tabindex="-1"></span>
 
   <div class="page-header">
     <div class="page-header-text">
@@ -86,7 +88,7 @@
       </div>
       <div class="search-wrap flex-1" style="min-width:200px">
         <span class="search-icon" aria-hidden="true">🔍</span>
-        <input class="input" id="f-search" type="search" placeholder="Buscar por CPF ou nome do medicamento…"/>
+        <input class="input" id="f-search" type="search" aria-label="Buscar por CPF ou nome do medicamento" placeholder="Buscar por CPF ou nome do medicamento…"/>
       </div>
       <p class="text-sm text-gray-500 flex-shrink-0">
         <strong class="text-blue-900" id="lbl-total-reqs">0</strong> solicitação(ões)
@@ -136,7 +138,11 @@
   </div>
 </div>
 
+<script src="config.js"></script>
+<script src="js/api-client.js"></script>
+<script src="js/api-response.js"></script>
+<script src="js/ui-safe.js"></script>
 <script src="js/admin-requests.js"></script>
-
+<script src="js/accessibility.js"></script>
 </body>
 </html>

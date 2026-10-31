@@ -1,14 +1,14 @@
-unit Servico_Produtos;
+Ôªøunit Servico_Produtos;
 
 interface
 
 uses
-  System.JSON, FireDAC.Comp.Client, Conexao, System.SysUtils, Data.DB;
+  System.JSON, FireDAC.Comp.Client, Conexao, System.SysUtils, Data.DB, Estoque;
 
 type
   TServicoProdutos = class
   public
-    // Adicionamos os 3 par‚metros de filtro
+    // Adicionamos os 3 par√¢metros de filtro
     class function ListarPaginado(const APage, ALimit: Integer; const ASearch, ACategoria, ADisponibilidade: string): TJSONObject;
   end;
 
@@ -20,7 +20,7 @@ var
   LQryTotal, LQryPagina: TFDQuery;
   LArrayDados: TJSONArray;
   LOffset: Integer;
-  LWhere: string;
+  LWhere, LFiltroEstoque: string;
 begin
   LConn := TProvedorConexao.ObterConexao;
   LQryTotal := TFDQuery.Create(nil);
@@ -40,27 +40,24 @@ begin
     if ACategoria <> '' then
       LWhere := LWhere + ' AND categoria = :Categoria ';
 
-    if ADisponibilidade = 'available' then
-      LWhere := LWhere + ' AND quantidadeEstoque > 5 '
-    else if ADisponibilidade = 'low' then
-      LWhere := LWhere + ' AND quantidadeEstoque > 0 AND quantidadeEstoque <= 5 '
-    else if ADisponibilidade = 'out' then
-      LWhere := LWhere + ' AND quantidadeEstoque = 0 ';
+    LFiltroEstoque := FiltroEstoque(ADisponibilidade);
+    if LFiltroEstoque <> '' then
+      LWhere := LWhere + ' AND (' + LFiltroEstoque + ') ';
 
     // 2. Consulta de TOTAL
     LQryTotal.SQL.Text := 'SELECT COUNT(*) as Total FROM Medicamentos' + LWhere;
 
-    // Passa os par‚metros se eles existirem na SQL
+    // Passa os par√¢metros se eles existirem na SQL
     if ASearch <> '' then LQryTotal.ParamByName('Search').AsString := '%' + ASearch + '%';
     if ACategoria <> '' then LQryTotal.ParamByName('Categoria').AsString := ACategoria;
 
     LQryTotal.Open;
     Result.AddPair('total_registros', TJSONNumber.Create(LQryTotal.FieldByName('Total').AsInteger));
 
-    // 3. Consulta da P¡GINA
+    // 3. Consulta da P√ÅGINA
     LOffset := (APage - 1) * ALimit;
 
-    LQryPagina.SQL.Text := 'SELECT idMedicamento, nome, descricao, categoria, dosagem, fabricante, quantidadeEstoque ' +
+    LQryPagina.SQL.Text := 'SELECT idMedicamento, nome, descricao, categoria, dosagem, fabricante, quantidadeEstoque, estoqueMinimo ' +
                            'FROM Medicamentos ' + LWhere +
                            ' ORDER BY nome ASC ' +
                            'OFFSET :Offset ROWS FETCH NEXT :Limit ROWS ONLY';
@@ -85,6 +82,7 @@ begin
           .AddPair('dosagem', LQryPagina.FieldByName('dosagem').AsString)
           .AddPair('fabricante', LQryPagina.FieldByName('fabricante').AsString)
           .AddPair('estoque', TJSONNumber.Create(LQryPagina.FieldByName('quantidadeEstoque').AsInteger))
+          .AddPair('estoqueMinimo', TJSONNumber.Create(LQryPagina.FieldByName('estoqueMinimo').AsInteger))
       );
       LQryPagina.Next;
     end;

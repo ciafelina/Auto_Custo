@@ -1,10 +1,10 @@
-unit Servico_AdminUsuarios;
+Ôªøunit Servico_AdminUsuarios;
 
 interface
 
 uses
   System.SysUtils, Data.DB, FireDAC.Comp.Client, Conexao, System.JSON,
-  Excecoes, Mensagens, System.MaskUtils, BCrypt;
+  Excecoes, Mensagens, System.MaskUtils, BCrypt, FireDAC.Stan.Error;
 
 type
   TServicoAdminUsuarios = class
@@ -36,7 +36,7 @@ begin
     if ABusca <> '' then LFiltroBusca := '%' + ABusca + '%'
     else LFiltroBusca := '%';
 
-    // 1. ESTATÕSTICAS GLOBAIS E FILTRADAS
+    // 1. ESTAT√çSTICAS GLOBAIS E FILTRADAS
     LQry.SQL.Add('SELECT ');
     LQry.SQL.Add('  (SELECT COUNT(*) FROM Usuarios) AS Total, ');
     LQry.SQL.Add('  (SELECT COUNT(*) FROM Usuarios WHERE IdCargo = 1) AS TotalAdmins, ');
@@ -61,7 +61,7 @@ begin
     Result.AddPair('totalLista', TJSONNumber.Create(LQry.FieldByName('TotalLista').AsInteger));
     LQry.Close;
 
-    // 2. LISTA PAGINADA DE USU¡RIOS
+    // 2. LISTA PAGINADA DE USU√ÅRIOS
     LQry.SQL.Clear;
     LQry.SQL.Add('SELECT idUsuarioCPF, nomeUsuario, email, IdCargo, status ');
     LQry.SQL.Add('FROM Usuarios WHERE (nomeUsuario LIKE :Busca OR CAST(idUsuarioCPF AS VARCHAR) LIKE :Busca) ');
@@ -83,14 +83,14 @@ begin
     while not LQry.Eof do
     begin
       var LCPF := LQry.FieldByName('idUsuarioCPF').AsString;
-      // Preenche com zeros ‡ esquerda caso o CPF tenha sumido (ex: CPFs que comeÁam com 0)
+      // Preenche com zeros √† esquerda caso o CPF tenha sumido (ex: CPFs que come√ßam com 0)
       LCPF := StringOfChar('0', 11 - Length(LCPF)) + LCPF;
       var LCPFFormatado := FormatMaskText('000\.000\.000\-00;0;_', LCPF);
 
       LArray.AddElement(
         TJSONObject.Create
-          .AddPair('cpf', LCPF) // CPF Limpo para o JS usar nos botıes
-          .AddPair('cpfFormatado', LCPFFormatado) // CPF bonito para exibiÁ„o
+          .AddPair('cpf', LCPF) // CPF Limpo para o JS usar nos bot√µes
+          .AddPair('cpfFormatado', LCPFFormatado) // CPF bonito para exibi√ß√£o
           .AddPair('nome', LQry.FieldByName('nomeUsuario').AsString)
           .AddPair('email', LQry.FieldByName('email').AsString)
           .AddPair('idCargo', TJSONNumber.Create(LQry.FieldByName('IdCargo').AsInteger))
@@ -122,7 +122,7 @@ begin
   LQry := TFDQuery.Create(nil);
   try
     LQry.Connection := LConn;
-    // O cargo padr„o È 3 (Paciente) ao criar, o admin pode alterar depois pelo painel
+    // O cargo padr√£o √© 3 (Paciente) ao criar, o admin pode alterar depois pelo painel
     LQry.SQL.Add('INSERT INTO Usuarios (idUsuarioCPF, nomeUsuario, email, senha, IdCargo, status) ');
     LQry.SQL.Add('VALUES (:cpf, :nome, :email, :senha, 3, ''Ativo'')');
 
@@ -134,8 +134,12 @@ begin
     try
       LQry.ExecSQL;
     except
-      on E: Exception do
-        raise EErroApi.Create(400, TCodigoErro.RequisicaoInvalida, 'Este CPF j· est· cadastrado no sistema.');
+      on E: EFDDBEngineException do
+      begin
+        if E.Kind = ekUKViolated then
+          raise EErroApi.Create(400, TCodigoErro.CpfDuplicado, 'Este CPF j√° est√° cadastrado no sistema.');
+        raise EErroApi.Create(500, TCodigoErro.ErroGravacaoBanco, 'N√£o foi poss√≠vel cadastrar o usu√°rio. Tente novamente.');
+      end;
     end;
   finally
     LQry.Free;

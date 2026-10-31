@@ -1,4 +1,4 @@
-unit Mensagens;
+﻿unit Mensagens;
 
 interface
 
@@ -6,6 +6,8 @@ type
   TCodigoErro = record
   public
     const RequisicaoInvalida   = 'REQUISICAO_INVALIDA';
+    const FormatoNaoSuportado  = 'FORMATO_NAO_SUPORTADO';
+    const MetodoNaoPermitido  = 'METODO_NAO_PERMITIDO';
     const ParametroAusente     = 'PARAMETRO_AUSENTE';
     const CredenciaisInvalidas = 'CREDENCIAIS_INVALIDAS';
     const AcessoNegado         = 'ACESSO_NEGADO';
@@ -27,6 +29,12 @@ type
     const NroOsDuplicado        = 'NRO_OS_DUPLICADO';
     const ProdutoInvalido       = 'PRODUTO_INVALIDO';
     const ProdutoSemEstoque     = 'PRODUTO_INVALIDO_OU_SEM_ESTOQUE';
+    const QuantidadeInvalida    = 'QUANTIDADE_INVALIDA';
+    const EstoqueInsuficiente   = 'ESTOQUE_INSUFICIENTE';
+    const StatusInvalido        = 'STATUS_INVALIDO';
+    const TransicaoStatusInvalida = 'TRANSICAO_STATUS_INVALIDA';
+    const EstornoEstoqueInvalido = 'ESTORNO_ESTOQUE_INVALIDO';
+    const HistoricoVinculado     = 'HISTORICO_VINCULADO';
     const FiltroObrigatorio     = 'FILTRO_OBRIGATORIO';
     const BuscaInvalida         = 'BUSCA_INVALIDA';
     const ErroCriacaoOS         = 'ERRO_CRIACAO_OS';

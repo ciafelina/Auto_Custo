@@ -1,4 +1,4 @@
-unit Controlador_Documento;
+ï»¿unit Controlador_Documento;
 
 interface
 
@@ -12,6 +12,8 @@ type
   end;
 
 implementation
+
+uses JsonApi;
 
 procedure DoListarDocumentos(Req: THorseRequest; Res: THorseResponse; Next: TProc);
 begin
@@ -29,9 +31,9 @@ var
 begin
   LTokenDados := ValidarToken(Req);
 
-  LBody := Req.Body<TJSONObject>;
+  LBody := LerObjetoJSON(Req);
   if (not Assigned(LBody)) or (LBody.Count = 0) then
-    raise EErroApi.Create(400, TCodigoErro.RequisicaoInvalida, 'Corpo da requisição vazio.');
+    raise EErroApi.Create(400, TCodigoErro.RequisicaoInvalida, 'Corpo da requisiÃ§Ã£o vazio.');
 
   LTipo          := LBody.GetValue<string>('tipo', '');
   LDataDoc       := LBody.GetValue<string>('dataDoc', '');
@@ -44,7 +46,7 @@ begin
   LIdInteressado := LBody.GetValue<Integer>('idInteressado', 0);
 
   if LTipo.Trim.IsEmpty then
-    raise EErroApi.Create(400, TCodigoErro.ParametroAusente, 'O "tipo" do documento é obrigatório.');
+    raise EErroApi.Create(400, TCodigoErro.ParametroAusente, 'O "tipo" do documento Ã© obrigatÃ³rio.');
 
   TServicoDocumento.Cadastrar(LTipo, LDataDoc, LNivel, LSerie, LVia, LObs, LAnoRef, LNFolhas,
                               LTokenDados.UsuarioCPF, LIdInteressado);
