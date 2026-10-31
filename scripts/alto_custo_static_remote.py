@@ -144,6 +144,22 @@ def publication_state(paths):
             'pendingRelease':pending['manifest']['releaseId'] if pending else None,'rolledBack':rolled_back}
 
 
+def _renewal_command():
+    # The systemd timer already supplies RandomizedDelaySec; manual probes must be bounded.
+    return ['/opt/autocusto-certbot/bin/certbot','renew','--cert-name','altocusto-domain',
+            '--quiet','--no-random-sleep-on-renew','--deploy-hook','/bin/systemctl reload nginx']
+
+
+def check_renewal(*, invoke, observe):
+    before_api=observe()
+    invoke(_renewal_command()+['--dry-run','--run-deploy-hooks'],timeout=240)
+    if observe()!=before_api:
+        raise RuntimeError('API state changed during certificate renewal test.')
+    if invoke(['systemctl','is-active',TIMER])!='active':
+        raise RuntimeError('Certificate renewal timer is not active.')
+    return {'renewalDryRun':True,'deployHookExercised':True,'apiStatePreserved':True,'timerActive':True}
+
+
 def restore_file(path, before):
     if path.is_symlink():
         path.unlink()
@@ -218,8 +234,10 @@ def _activate(paths, manifest, files, *, invoke, verify, observe):
 Description=Renew the Alto Custo domain certificate
 [Service]
 Type=oneshot
-ExecStart=/opt/autocusto-certbot/bin/certbot renew --cert-name altocusto-domain --quiet --deploy-hook "/bin/systemctl reload nginx"
+ExecStart=__RENEW_COMMAND__
 '''
+        command=_renewal_command()
+        service=service.replace('__RENEW_COMMAND__',' '.join(command[:-1])+' '+json.dumps(command[-1]))
         timer = '''[Unit]
 Description=Check the Alto Custo domain certificate twice daily
 [Timer]

@@ -224,5 +224,24 @@ class PublishTests(unittest.TestCase):
         self.assertIsNone(state['activeRelease'])
         self.assertTrue(state['rolledBack'])
 
+    def test_renewal_simulation_exercises_reload_hook_and_checks_api_preservation(self):
+        self.assertTrue(callable(getattr(module,'check_renewal',None)))
+        calls=[]
+        def invoke(argv,must=True,timeout=40):
+            calls.append(argv)
+            return 'active' if argv[:2]==['systemctl','is-active'] else ''
+        result=module.check_renewal(invoke=invoke,observe=lambda:{'api':'same'})
+        self.assertTrue(result['renewalDryRun'])
+        self.assertTrue(result['timerActive'])
+        renewal=next(call for call in calls if call[0]=='/opt/autocusto-certbot/bin/certbot')
+        self.assertIn('--dry-run',renewal)
+        self.assertIn('--run-deploy-hooks',renewal)
+        self.assertIn('--no-random-sleep-on-renew',renewal)
+        self.assertEqual(renewal[renewal.index('--deploy-hook')+1],'/bin/systemctl reload nginx')
+        self.assertEqual(renewal[renewal.index('--cert-name')+1],'altocusto-domain')
+        states=iter([{'api':'before'},{'api':'changed'}])
+        with self.assertRaisesRegex(RuntimeError,'API state changed'):
+            module.check_renewal(invoke=invoke,observe=lambda:next(states))
+
 
 if __name__=='__main__':unittest.main(verbosity=2)

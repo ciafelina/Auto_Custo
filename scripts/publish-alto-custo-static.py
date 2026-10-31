@@ -128,10 +128,8 @@ try:
         result=publisher.recover(paths,invoke=invoke,observe=observe)
         result['azureConfigurationPreserved']=True
     elif action=='renewal-test':
-        before=observe()
-        invoke(['/opt/autocusto-certbot/bin/certbot','renew','--cert-name','altocusto-domain','--dry-run','--run-deploy-hooks'],timeout=240)
-        assert observe()==before
-        result={'renewalDryRun':True,'apiStatePreserved':True,'timerActive':invoke(['systemctl','is-active',publisher.TIMER])=='active'}
+        with publisher.publication_lock(paths):
+            result=publisher.check_renewal(invoke=invoke,observe=observe)
     else:
         before=observe()
         result={'apiActive':True,'azureConfigurationStrict':True,
