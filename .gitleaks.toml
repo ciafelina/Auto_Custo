@@ -37,3 +37,11 @@ condition = "AND"
 paths = ['''(?:^|/)tests/sqlserver-integration\.mjs$''']
 regexTarget = "secret"
 regexes = ['''^senha-ficticia-integracao-2026$''']
+
+[[allowlists]]
+description = "Ponteiros de funcoes OpenSSL inicializados com nil; nao sao valores de chave"
+targetRules = ["generic-api-key"]
+condition = "AND"
+paths = ['''(?:^|/)modules/acbr-mail/Terceiros/synalist/ssl_openssl_lib\.pas$''']
+regexTarget = "line"
+regexes = ['''^\s*_SslCtxUsePrivateKeyASN1:\s*TSslCtxUsePrivateKeyASN1\s*=\s*nil;\s*$''', '''^\s*_i2dPrivateKeyBio:\s*Ti2dPrivateKeyBio\s*=\s*nil;\s*$''']

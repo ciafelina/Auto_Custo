@@ -1,3 +1,4 @@
+import {fixtureCredential} from './session-claim.mjs';
 import assert from 'node:assert/strict';
 import {createRequire} from 'node:module';
 import {readFile} from 'node:fs/promises';
@@ -104,7 +105,7 @@ try{
   await new Promise((resolve,reject)=>{server.once('error',reject);server.listen(0,'127.0.0.1',resolve);});
   const front='http://127.0.0.1:'+server.address().port;
   const context=await browser.newContext({serviceWorkers:'block'}),page=await context.newPage();
-  const h=Buffer.from('{"alg":"HS256"}').toString('base64url'),p=Buffer.from(JSON.stringify({cpf:'44444444444',exp:Math.floor(Date.now()/1000)+3600})).toString('base64url');
+  const h=Buffer.from('{"alg":"HS256"}').toString('base64url'),p=Buffer.from(JSON.stringify({credencial:fixtureCredential,cpf:'44444444444',exp:Math.floor(Date.now()/1000)+3600})).toString('base64url');
   const jwt=`${h}.${p}.${createHmac('sha256','chave-exclusiva-de-testes-nao-usar-em-producao-2026').update(`${h}.${p}`).digest('base64url')}`;
   await context.addInitScript(token=>{localStorage.setItem('token_jwt',token);localStorage.setItem('usuario_cpf','44444444444');localStorage.setItem('nome_usuario','Teste');localStorage.setItem('usuario_cargo','1');window.alert=()=>{};},jwt);
   await context.route('**/*',route=>[front,actualApi].includes(new URL(route.request().url()).origin)?route.continue():route.abort());

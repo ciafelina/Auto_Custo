@@ -1,10 +1,21 @@
 ﻿$ErrorActionPreference = 'Stop'
 $testProjectRoot = Split-Path $PSScriptRoot -Parent
 $testOutput = Join-Path $PSScriptRoot '.build'
+if ($env:AUTO_CUSTO_TEST_RECOVERY -eq '1') { $testOutput = Join-Path $testOutput 'password-recovery' }
 New-Item -ItemType Directory -Force $testOutput | Out-Null
 $utf8Bom = New-Object System.Text.UTF8Encoding($true)
 $source = [IO.File]::ReadAllText((Join-Path $testProjectRoot 'ProjetoFaculdade.dpr'))
 $source = $source.Replace('program ProjetoFaculdade;', 'program AuthHarness;').Replace('{$R *.res}', '')
+if ($env:AUTO_CUSTO_TEST_RECOVERY -eq '1') { $source = $source.Replace('providers\EmailRecuperacao.pas', 'tests\fixtures\recovery\EmailRecuperacao.pas') }
+if ($env:AUTO_CUSTO_TEST_RECOVERY -eq '1') {
+    $source = $source.Replace('THorse.Use(MiddlewareTratarErros);', @'
+THorse.Use(MiddlewareTratarErros);
+    THorse.Use(procedure(Req: THorseRequest; Res: THorseResponse; Next: TProc)
+      begin
+        try Next(); except on E: Exception do begin Writeln(E.ClassName + ': ' + E.Message); Flush(Output); raise; end; end;
+      end);
+'@)
+}
 $source = $source.Replace('  Horse,', "  Horse,`r`n  ErrosTeste in '" + (Join-Path $PSScriptRoot 'fixtures\ErrosTeste.pas') + "',")
 $source = [regex]::Replace($source, "in '([^']+)'", {
   param($match)
@@ -21,7 +32,7 @@ PrepararBaseTeste;
       end);
     THorse.Use(CORS);
 '@)
-$source = $source.Replace('THorse.Listen(9000,', "RegistrarRotasErrosTeste;`r`n    THorse.Listen(19001,")
+$source = $source.Replace('THorse.Listen(LPortaAPI,', "RegistrarRotasErrosTeste;`r`n    THorse.Listen(19001,")
 [IO.File]::WriteAllText((Join-Path $testOutput 'AuthHarness.dpr'), $source, $utf8Bom)
 [xml]$project = [IO.File]::ReadAllText((Join-Path $testProjectRoot 'ProjetoFaculdade.dproj'))
 $searchPaths = @((Join-Path $PSScriptRoot 'fixtures'), $testProjectRoot)

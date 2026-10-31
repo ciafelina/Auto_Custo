@@ -21,6 +21,10 @@ uses
   Secrets in 'utils\Secrets.pas',
   Estoque in 'utils\Estoque.pas',
   JsonApi in 'utils\JsonApi.pas',
+  RecuperacaoSeguranca in 'utils\RecuperacaoSeguranca.pas',
+  EmailRecuperacao in 'providers\EmailRecuperacao.pas',
+  Servico_RecuperacaoSenha in 'services\Servico_RecuperacaoSenha.pas',
+  Controlador_RecuperacaoSenha in 'controllers\Controlador_RecuperacaoSenha.pas',
   Controlador_Usuario in 'controllers\Controlador_Usuario.pas',
   Servico_Usuario in 'services\Servico_Usuario.pas',
   Servico_Documento in 'services\Servico_Documento.pas',
@@ -42,10 +46,16 @@ uses
   Servico_AdminUsuarios in 'services\Servico_AdminUsuarios.pas',
   Controlador_AdminUsuarios in 'controllers\Controlador_AdminUsuarios.pas';
 
+var LPortaAPI: Integer;
 begin
 
    try
     CarregarSegredos;
+    LPortaAPI:=9000;
+    if GetEnvironmentVariable('AUTO_CUSTO_PORT')<>'' then
+      if not TryStrToInt(GetEnvironmentVariable('AUTO_CUSTO_PORT'),LPortaAPI) or (LPortaAPI<1) or (LPortaAPI>65535) then
+        raise EConfiguracaoSegura.Create('Porta da API inválida.');
+    IniciarEmailRecuperacao;
     HorseCORS.AllowedHeaders('Content-Type, Authorization');
     HorseCORS.AllowedMethods('GET, POST, PUT, PATCH, DELETE, OPTIONS');
   	THorse.Use(CORS);
@@ -54,6 +64,7 @@ begin
     THorse.Use(MiddlewareJSON);
 
     TControladorAutenticacao.RegistrarRotas;
+    TControladorRecuperacaoSenha.RegistrarRotas;
     TControladorUsuario.RegistrarRotas;
     TControladorDocumento.RegistrarRotas;
     TControladorInteressado.RegistrarRotas;
@@ -65,7 +76,7 @@ begin
     TControladorAdminSolicitacoes.RegistrarRotas;
     TControladorAdminUsuarios.RegistrarRotas;
 
-    THorse.Listen(9000,
+    THorse.Listen(LPortaAPI,
 {$IFDEF LINUX}
         '127.0.0.1',
 {$ENDIF}
@@ -77,7 +88,7 @@ begin
           Writeln(' * Versao do Sistema : 26.0428-2201');
           Writeln(' * Iniciado em       : ' + FormatDateTime('dd/mm/yyyy hh:nn:ss', Now));
           Writeln(' * Status            : OPERACIONAL');
-          Writeln(' * Porta de Escuta   : 9000');
+          Writeln(' * Porta de Escuta   : ' + IntToStr(LPortaAPI));
           Writeln('======================================================');
           Writeln('');
         end);

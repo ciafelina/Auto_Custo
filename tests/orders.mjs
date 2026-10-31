@@ -1,10 +1,11 @@
+import {fixtureCredential} from './session-claim.mjs';
 import assert from 'node:assert/strict';
 import {createHmac} from 'node:crypto';
 import {DatabaseSync} from 'node:sqlite';
 import {fileURLToPath} from 'node:url';
 const base='http://127.0.0.1:19001';
 const header=Buffer.from('{"alg":"HS256"}').toString('base64url');
-const payload=Buffer.from(JSON.stringify({cpf:'22222222222',exp:Math.floor(Date.now()/1000)+3600})).toString('base64url');
+const payload=Buffer.from(JSON.stringify({credencial:fixtureCredential,cpf:'22222222222',exp:Math.floor(Date.now()/1000)+3600})).toString('base64url');
 const jwt=`${header}.${payload}.${createHmac('sha256','chave-exclusiva-de-testes-nao-usar-em-producao-2026').update(`${header}.${payload}`).digest('base64url')}`;
 const ready=await fetch(base+'/__ready');
 assert.equal(ready.headers.get('X-AutoCusto-Test'),'isolated','Servidor de testes não identificado.');

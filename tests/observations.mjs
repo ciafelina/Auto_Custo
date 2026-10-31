@@ -1,8 +1,9 @@
+import {fixtureCredential} from './session-claim.mjs';
 import assert from 'node:assert/strict';
 import {createHmac} from 'node:crypto';
 import {DatabaseSync} from 'node:sqlite';
 import {fileURLToPath} from 'node:url';
-const base='http://127.0.0.1:19001',h=Buffer.from('{"alg":"HS256"}').toString('base64url'),p=Buffer.from(JSON.stringify({cpf:'44444444444',exp:Math.floor(Date.now()/1000)+3600})).toString('base64url');
+const base='http://127.0.0.1:19001',h=Buffer.from('{"alg":"HS256"}').toString('base64url'),p=Buffer.from(JSON.stringify({credencial:fixtureCredential,cpf:'44444444444',exp:Math.floor(Date.now()/1000)+3600})).toString('base64url');
 const jwt=`${h}.${p}.${createHmac('sha256','chave-exclusiva-de-testes-nao-usar-em-producao-2026').update(`${h}.${p}`).digest('base64url')}`;
 assert.equal((await fetch(base+'/__ready')).headers.get('X-AutoCusto-Test'),'isolated');
 const db=new DatabaseSync(fileURLToPath(new URL('./.build/autenticacao-test.sqlite',import.meta.url)));db.exec('PRAGMA busy_timeout=10000');

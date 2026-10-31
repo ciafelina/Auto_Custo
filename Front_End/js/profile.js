@@ -79,6 +79,17 @@
             });
 
             if (response.ok) {
+                if (payload.senha !== '') {
+                    alert('Senha alterada. Entre novamente com a nova senha.');
+                    try {
+                        for (const chave of ['token_jwt', 'usuario_cpf', 'nome_usuario', 'usuario_cargo']) localStorage.removeItem(chave);
+                    } catch {
+                        // A credencial anterior já foi revogada pelo servidor.
+                    } finally {
+                        window.location.replace('login.html');
+                    }
+                    return;
+                }
                 alert('Perfil atualizado com sucesso!');
                 document.getElementById('edit-section').classList.add('hidden');
                 document.getElementById('view-section').classList.remove('hidden');

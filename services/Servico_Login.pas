@@ -11,6 +11,7 @@ type
   TRespostaLogin = record
     UsuarioCPF: string;
     NomeUsuario: string;
+    Credencial: string;
     IdCargo : integer;
   end;
 
@@ -21,6 +22,7 @@ type
   end;
 
 implementation
+uses RecuperacaoSeguranca;
 
 { TServicoAutenticacao }
 
@@ -56,6 +58,7 @@ begin
     Result.UsuarioCPF  := LQryUser.FieldByName('idUsuarioCPF').AsString;
     Result.NomeUsuario := LQryUser.FieldByName('nomeUsuario').AsString;
     Result.IdCargo     := LQryUser.FieldByName('IdCargo').AsInteger;
+    Result.Credencial := MarcaCredencial(LQryUser.FieldByName('senha').AsString);
   finally
     LQryUser.Free;
     LConn.Free;

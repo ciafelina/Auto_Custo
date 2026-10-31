@@ -1,5 +1,20 @@
 # Testes dos itens 1 a 12 — API, segurança, estoque e acesso em rede
 
+## Recuperação de senha — testes focados
+
+Esta etapa executa somente a funcionalidade nova, o login/sessão afetado e a segurança de sua publicação; não repete as suítes históricas abaixo.
+
+```powershell
+& tests/run-password-recovery.ps1
+node tests/password-recovery-browser.mjs
+node tests/password-profile-session.mjs
+python tests/test_password_recovery_publish.py
+```
+
+Resultados locais: API 16, navegador 10, perfil/sessão 2 e publicação/retorno 7 cenários aprovados. O teste Windows da publicação simula o lock POSIX; o mesmo arquivo roda também no Linux para validar a plataforma real. Os navegadores usam API interceptada/dados fictícios. `scripts/test-password-recovery-vm.py --functional-only` testa o executável Linux, TLS SMTP e uma única conta temporária no SQL Server Azure, preservando a versão pública. `--smtp-only` repete somente o envio real após corrigir a credencial externa; nenhuma credencial é registrada. O helper não altera uma release já ativa.
+
+Ver [funcionamento e configuração](../docs/recuperacao-senha.md) e [roteiro QA](../docs/qa-recuperacao-senha.md) para estado da validação/publicação. Uma aceitação SMTP não representa confirmação de caixa de entrada.
+
 ## Fluxo autenticado completo no Azure publicado — 31/10/2026
 
 **30 cenários aprovados, zero falhas, saída 0**, na execução `20261031-765d0947685e`. Cadastro/login, cadastro de medicamento, pedido, aprovação com observação e retirada foram executados no Edge contra o site/API publicados, sem simular respostas. A persistência foi conferida no Azure SQL do projeto. Negativas complementares cobrem quantidade/saldo, permissões/titularidade, edição sem sobrescrita de estoque, transições/repetições, histórico, observação de outro pedido e classificação pelo mínimo.

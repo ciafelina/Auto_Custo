@@ -82,6 +82,8 @@ begin
   C := TProvedorConexao.ObterConexao;
   try
     C.ExecSQL('DROP TABLE IF EXISTS Usuarios');
+    C.ExecSQL('DROP TABLE IF EXISTS RecuperacoesSenha');
+    C.ExecSQL('CREATE TABLE RecuperacoesSenha (tokenHash TEXT PRIMARY KEY,idUsuarioCPF BIGINT,emailVinculo TEXT,senhaVinculo TEXT,criadoEm BIGINT,expiraEm BIGINT,usado INTEGER)');
     C.ExecSQL('DROP TABLE IF EXISTS Solicitacoes');
     C.ExecSQL('DROP TABLE IF EXISTS Medicamentos');
     C.ExecSQL('CREATE TABLE Usuarios (idUsuarioCPF BIGINT PRIMARY KEY, nomeUsuario TEXT, IdCargo INTEGER, status TEXT DEFAULT ''Ativo'', email TEXT, telefone TEXT, endereco TEXT, dataNascimento TEXT, dadosSaude TEXT, senha TEXT)');

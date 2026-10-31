@@ -1,3 +1,4 @@
+import {fixtureCredential} from './session-claim.mjs';
 import assert from 'node:assert/strict';
 import {createHmac} from 'node:crypto';
 import {DatabaseSync} from 'node:sqlite';
@@ -6,7 +7,7 @@ const base = 'http://127.0.0.1:19001';
 const key = 'chave-exclusiva-de-testes-nao-usar-em-producao-2026';
 function token(cpf, cargo = 3, secret = key, exp = Math.floor(Date.now()/1000)+3600) {
   const h = Buffer.from(JSON.stringify({alg:'HS256',typ:'JWT'})).toString('base64url');
-  const p = Buffer.from(JSON.stringify({cpf,nome:'Teste',cargo,exp,sub:'SCHOOLER_API'})).toString('base64url');
+  const p = Buffer.from(JSON.stringify({credencial:fixtureCredential,cpf,nome:'Teste',cargo,exp,sub:'SCHOOLER_API'})).toString('base64url');
   return `${h}.${p}.${createHmac('sha256',secret).update(`${h}.${p}`).digest('base64url')}`;
 }
 const patient = token('11111111111'), employee = token('33333333333',2), admin = token('44444444444',1);
@@ -96,7 +97,7 @@ await check('conta desativada perde acesso','PUT','/perfil/11111111111','Bearer 
 await check('cadastro público não aceita cargo administrativo','POST','/usuarios',null,{cpf:'77777777777',nomeCompleto:'Paciente de teste',dataNascimento:'2000-01-01',senha:'senha-apenas-de-teste',idCargo:1,cargo:1},201);
 verify('cadastro público mantém cargo paciente',()=>assert.equal(db.prepare('SELECT IdCargo AS cargo FROM Usuarios WHERE idUsuarioCPF=77777777777').get().cargo,3));
 try {
-  const login=await fetch(base+'/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({cpf:'77777777777',senha:'senha-apenas-de-teste'})});
+  const login=await fetch(base+'/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({credencial:fixtureCredential,cpf:'77777777777',senha:'senha-apenas-de-teste'})});
   assert.equal(login.status,200);
   const data=await login.json();
   assert.equal(data.sucesso,true);

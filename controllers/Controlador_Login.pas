@@ -41,6 +41,7 @@ begin
       LJWT.Claims.Expiration := IncHour(Now, 8); // Expira em 8 horas
       LJWT.Claims.SetClaimOfType<string>('cpf', LResult.UsuarioCPF);
       LJWT.Claims.SetClaimOfType<string>('nome', LResult.NomeUsuario);
+      LJWT.Claims.SetClaimOfType<string>('credencial', LResult.Credencial);
       LJWT.Claims.SetClaimOfType<Integer>('cargo', LResult.IdCargo);
       LTokenJWTString := TJOSE.SHA256CompactToken(ObterChaveJWT, LJWT);
     finally

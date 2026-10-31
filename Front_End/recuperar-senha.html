@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+ <meta charset="UTF-8"/>
+ <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+ <meta name="referrer" content="no-referrer"/>
+ <title>Recuperar senha — Alto Custo</title>
+ <script src="js/theme.js"></script>
+ <link rel="stylesheet" href="css/style.css"/>
+</head>
+<body>
+<a class="skip-link" href="#main-content">Pular para o conteúdo principal</a>
+<main class="auth-page" id="main-content" tabindex="-1">
+ <div class="auth-box fade-in-up">
+  <div class="card auth-card">
+   <h1 class="auth-title">Recuperar senha</h1>
+   <p class="auth-city">Alto Custo</p>
+   <p class="project-intro">Projeto acadêmico desenvolvido pelo Grupo 5 — Univesp.</p>
+   <p class="text-sm mt-4 mb-4">Informe seu CPF e o e-mail cadastrado. Se os dados corresponderem a uma conta ativa, enviaremos um link válido por 15 minutos.</p>
+   <form id="form-recuperar" method="post" novalidate>
+    <div class="flex flex-col gap-4">
+     <div class="form-group">
+      <label class="form-label" for="rec-cpf">CPF</label>
+      <input class="input" id="rec-cpf" type="text" inputmode="numeric" maxlength="14" autocomplete="username" placeholder="000.000.000-00" required/>
+     </div>
+     <div class="form-group">
+      <label class="form-label" for="rec-email">E-mail cadastrado</label>
+      <input class="input" id="rec-email" type="email" maxlength="254" autocomplete="email" required/>
+     </div>
+     <p id="rec-mensagem" class="hidden alert" role="status" aria-live="polite" tabindex="-1"></p>
+     <button type="submit" class="btn btn-primary btn-md btn-block">Enviar link de recuperação</button>
+    </div>
+   </form>
+   <p class="text-sm mt-4">Confira também a pasta de spam. Aguarde pelo menos um minuto antes de solicitar outro link. Se não tiver acesso ao e-mail cadastrado, procure a equipe responsável pelo sistema.</p>
+   <p class="text-center mt-4"><a class="btn btn-outline btn-sm" href="login.html">← Voltar ao login</a></p>
+  </div>
+  <p class="project-credit">Projeto acadêmico desenvolvido pelo Grupo 5 — Univesp. Versão 1.0.0 · 2026.</p>
+ </div>
+</main>
+<script src="config.js"></script>
+<script src="js/api-client.js"></script>
+<script src="js/api-response.js"></script>
+<script src="js/recuperacao-senha.js"></script>
+<script src="js/accessibility.js"></script>
+</body>
+</html>

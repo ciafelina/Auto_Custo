@@ -11,6 +11,7 @@ type
     UsuarioCPF: string;
     NomeUsuario: string;
     IdCargo: Integer;
+    Credencial: string;
   end;
 
 function ValidarToken(Req: THorseRequest): TDadosToken;
@@ -20,7 +21,7 @@ procedure ExigirTitular(Req: THorseRequest; const ACPF: string);
 implementation
 
 uses
-  Data.DB, FireDAC.Comp.Client, FireDAC.Stan.Param, FireDAC.DApt, Conexao;
+  Data.DB, FireDAC.Comp.Client, FireDAC.Stan.Param, FireDAC.DApt, Conexao, RecuperacaoSeguranca;
 
 type
   TSessaoAutenticada = class(TSession)
@@ -53,11 +54,13 @@ begin
     LQry := TFDQuery.Create(nil);
     try
       LQry.Connection := LConn;
-      LQry.SQL.Text := 'SELECT nomeUsuario, IdCargo, status FROM Usuarios WHERE idUsuarioCPF = :CPF';
+      LQry.SQL.Text := 'SELECT nomeUsuario, IdCargo, status, senha FROM Usuarios WHERE idUsuarioCPF = :CPF';
       LQry.ParamByName('CPF').AsLargeInt := StrToInt64(ADados.UsuarioCPF);
       LQry.Open;
       if LQry.IsEmpty then
         raise EErroApi.Create(401, TCodigoErro.CredenciaisInvalidas, 'A conta desta sessão não está disponível.');
+      if (ADados.Credencial = '') or not IguaisSeguros(ADados.Credencial,MarcaCredencial(LQry.FieldByName('senha').AsString)) then
+        raise EErroApi.Create(401, TCodigoErro.CredenciaisInvalidas, 'Sua senha foi alterada ou a sessão precisa ser renovada. Faça login novamente.');
       if not SameText(Trim(LQry.FieldByName('status').AsString), 'Ativo') then
         raise EErroApi.Create(401, TCodigoErro.CredenciaisInvalidas, 'Esta conta está inativa. Faça login com uma conta ativa.');
       ADados.IdCargo := LQry.FieldByName('IdCargo').AsInteger;
@@ -98,6 +101,7 @@ begin
       if LJWT.Claims.Expiration <= Now then
         raise EErroApi.Create(401, TCodigoErro.CredenciaisInvalidas, 'Sua sessão expirou. Faça login novamente.');
       Result.UsuarioCPF := NormalizarCPF(LJWT.Claims.JSON.GetValue<string>('cpf', ''));
+      Result.Credencial := LJWT.Claims.JSON.GetValue<string>('credencial','');
       if Result.UsuarioCPF = '' then
         raise EErroApi.Create(401, TCodigoErro.CredenciaisInvalidas, 'O token não identifica um usuário válido.');
     finally
@@ -138,8 +142,12 @@ begin
   LPublica := False;
   if (Length(LPartes) = 1) and SameText(Req.RawWebRequest.Method, 'POST') then
     LPublica := (LPartes[0] = 'login') or (LPartes[0] = 'usuarios');
+  if (Length(LPartes) = 2) and SameText(Req.RawWebRequest.Method, 'POST') then
+    LPublica := (LPartes[0]='senha') and ((LPartes[1]='recuperar') or (LPartes[1]='redefinir'));
   if LPublica then
   begin
+    if (Length(LPartes)=2) and (Req.RawWebRequest.ContentLength>8192) then
+      raise EErroApi.Create(413,'REQUISICAO_MUITO_GRANDE','A requisição de recuperação excede o tamanho permitido.');
     Next();
     Exit;
   end;

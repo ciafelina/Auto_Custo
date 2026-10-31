@@ -1,3 +1,4 @@
+import {fixtureCredential} from './session-claim.mjs';
 import assert from 'node:assert/strict';
 import {createHmac} from 'node:crypto';
 import {DatabaseSync} from 'node:sqlite';
@@ -6,7 +7,7 @@ import {fileURLToPath} from 'node:url';
 const base = 'http://127.0.0.1:19001';
 const key = 'chave-exclusiva-de-testes-nao-usar-em-producao-2026';
 const encode = value => Buffer.from(typeof value === 'string' ? value : JSON.stringify(value)).toString('base64url');
-const claims = {cpf:'11111111111',nome:'Paciente',cargo:3,sub:'SCHOOLER_API',exp:Math.floor(Date.now()/1000)+3600};
+const claims = {credencial:fixtureCredential,cpf:'11111111111',nome:'Paciente',cargo:3,sub:'SCHOOLER_API',exp:Math.floor(Date.now()/1000)+3600};
 function signed(header, payload, secret=key, hash='sha256') {
   const input = `${encode(header)}.${encode(payload)}`;
   return `${input}.${createHmac(hash,secret).update(input).digest('base64url')}`;

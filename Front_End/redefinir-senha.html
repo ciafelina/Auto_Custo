@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+ <meta charset="UTF-8"/>
+ <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+ <meta name="referrer" content="no-referrer"/>
+ <title>Nova senha — Alto Custo</title>
+ <script src="js/theme.js"></script>
+ <link rel="stylesheet" href="css/style.css"/>
+</head>
+<body>
+<a class="skip-link" href="#main-content">Pular para o conteúdo principal</a>
+<main class="auth-page" id="main-content" tabindex="-1">
+ <div class="auth-box fade-in-up">
+  <div class="card auth-card">
+   <h1 class="auth-title">Escolha uma nova senha</h1>
+   <p class="auth-city">Alto Custo</p>
+   <p class="project-intro">Projeto acadêmico desenvolvido pelo Grupo 5 — Univesp.</p>
+   <p class="text-sm mt-4 mb-4">Use de 8 a 64 caracteres. O limite é de 72 bytes: letras acentuadas e emojis podem ocupar mais de um byte.</p>
+   <p id="rec-mensagem" class="hidden alert" role="status" aria-live="polite" tabindex="-1"></p>
+   <form id="form-redefinir" method="post" novalidate>
+    <div class="flex flex-col gap-4">
+     <div class="form-group">
+      <label class="form-label" for="nova-senha">Nova senha</label>
+      <input class="input" id="nova-senha" type="password" minlength="8" maxlength="64" autocomplete="new-password" required/>
+     </div>
+     <div class="form-group">
+      <label class="form-label" for="confirma-senha">Confirme a nova senha</label>
+      <input class="input" id="confirma-senha" type="password" minlength="8" maxlength="64" autocomplete="new-password" required/>
+     </div>
+     <button type="submit" class="btn btn-primary btn-md btn-block">Salvar nova senha</button>
+    </div>
+   </form>
+   <p class="text-center mt-4"><a href="recuperar-senha.html">Solicitar outro link de recuperação</a></p>
+   <p class="text-center mt-4"><a class="btn btn-outline btn-sm" href="login.html">← Voltar ao login</a></p>
+  </div>
+  <p class="project-credit">Projeto acadêmico desenvolvido pelo Grupo 5 — Univesp. Versão 1.0.0 · 2026.</p>
+ </div>
+</main>
+<script src="config.js"></script>
+<script src="js/api-client.js"></script>
+<script src="js/api-response.js"></script>
+<script src="js/recuperacao-senha.js"></script>
+<script src="js/accessibility.js"></script>
+</body>
+</html>
