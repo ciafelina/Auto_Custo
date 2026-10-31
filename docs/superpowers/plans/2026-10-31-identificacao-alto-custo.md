@@ -48,7 +48,7 @@
 - [x] Publicar somente o arquivo de comprovação, com backup da configuração nginx e `nginx -t` antes do reload.
 - [x] Conferir HTTPS, corpo/hash do arquivo e ausência de impacto no site/API; concluir a verificação autorizada no Search Console.
 - [x] Ler problemas de segurança e exemplos da propriedade. Investigar achados específicos e corrigir somente os confirmados.
-- [ ] Após a publicação revisada, solicitar revisão com descrição factual. Registrar estado e eventual prazo externo sem prometer remoção imediata do alerta.
+- [x] Após a publicação revisada, solicitar revisão com descrição factual. Registrar estado e eventual prazo externo sem prometer remoção imediata do alerta.
 
 ### Tarefa 3 — Domínio e atualização estática
 
@@ -57,16 +57,16 @@
 **Interfaces:** Mesmo servidor e `/api`; apenas host e arquivos públicos. Arquivo Google persiste fora da release estática, com rota exata. Sem reutilizar rollback que restaura o banco anterior.
 
 - [x] Confirmar acesso ao DuckDNS e disponibilidade do nome; cadastrar/apontar `altocusto.duckdns.org` na conta do usuário ou registrar impedimento concreto.
-- [ ] Preparar o certificado/renovação do novo domínio, mantendo o atual ativo; validar cadeia, hostname, DNS e proxy `/api` antes de divulgar. Certificado emitido; renovação/ativação ainda pendentes.
+- [x] Preparar o certificado/renovação do novo domínio, mantendo o atual ativo; validar cadeia, hostname, DNS e proxy `/api` antes de divulgar. Certificado, ativação e simulação de renovação conferidos; API preservada.
 - [x] Criar atualização estática com manifesto de hashes, checagem de caminhos, backup e retorno limitado a nginx/arquivos públicos. Conferir que nenhum comando altera serviço/INI/banco.
-- [ ] Testar preparação e falha/retorno em pasta descartável; preparar release pública, validar nginx e ativar com verificações HTTPS/hashes/API protegida e binário/configuração preservados.
-- [ ] Conferir os títulos/identificação no site servido, resposta do arquivo Google, status da renovação e classificação pública do domínio. Manter explícitas as pendências externas.
+- [x] Testar preparação e falha/retorno em pasta descartável; preparar release pública, validar nginx e ativar com verificações HTTPS/hashes/API protegida e binário/configuração preservados.
+- [x] Conferir os títulos/identificação no site servido, resposta do arquivo Google, status da renovação e classificação pública do domínio. Manter explícitas as pendências externas.
 
 ### Tarefa 4 — Entrega
 
 **Files:** `docs/qa-identificacao-alto-custo.md`, documentação de publicação, resumo do Grupo 5 e commits de fontes/testes.
 
-- [ ] Entregar checklist operacional preenchido, capturas e resumo atualizado, distinguindo funcionalidades implementadas e pendentes.
+- [x] Entregar checklist operacional preenchido, capturas e resumo atualizado, distinguindo funcionalidades implementadas e pendentes.
 - [ ] Auditar índice/histórico novo com Gitleaks e comparação com segredos conhecidos; verificar diff e ausência de arquivos privados.
 - [ ] Enviar commits normais ao GitHub e conferir o commit remoto, com branch/arquivos validados na pasta principal.
 - [ ] Informar endereço efetivo e estado do aviso do Google; listar qualquer bloqueio de acesso, DNS ou processamento externo.

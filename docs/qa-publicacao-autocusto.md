@@ -1,5 +1,7 @@
 # Conferência da publicação AutoCusto
 
+Atualização de identificação/endereço em 31/10/2026: conferir o [checklist Alto Custo](qa-identificacao-alto-custo.md). Endereço atual: `https://altocusto.duckdns.org/`; o anterior foi mantido. O resultado de Azure abaixo pertence à rodada anterior, sem nova escrita de dados nesta atualização.
+
 Fluxo autenticado no Azure concluído em 31/10/2026: **30 cenários aprovados, zero falhas**, usando e removendo exclusivamente dados fictícios. As sete tabelas originais permaneceram iguais. O checklist preenchido e as evidências estão em `docs/resultado-e2e-azure.md`. Os itens abaixo permanecem como roteiro operacional para futuras conferências; celular físico e contas reais não foram usados nessa rodada.
 
 ## Endereço e aparência

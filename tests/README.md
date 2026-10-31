@@ -254,3 +254,12 @@ Esta integração usa o servidor SQL remoto real a partir deste computador. O ac
 Resultado final MSSQL: **121 aprovados, zero falhas**, com remoção do banco e INI temporários confirmada em cleanup.json. A rodada abrange dez exclusões de medicamento concorrentes com pedido, cinco exclusões de conta concorrentes com pedido e dez cancelamentos concorrentes com exclusão. As 25 disputas mantiveram respostas esperadas, vínculos e saldo. O executável principal Win32/Debug compilou após as correções. A revisão independente não apontou novo problema importante nas mudanças de produção.
 
 Regressão final após a adaptação da fixture: **463 aprovados, zero falhas**, exit code 0 em `tests/regression-sql-fixes.log`. As mesmas asserções de concorrência/status foram mantidas, incluindo um único sucesso e nove conflitos nos dez cancelamentos simultâneos. Sintaxe de todos os `.mjs` e dos scripts PowerShell SQL Server validada.
+
+
+## Identificação e publicação Alto Custo — 31/10/2026
+
+As verificações de identificação em `frontend-integration.mjs` cobrem dez páginas, dois temas e quatro larguras. A regressão dessa etapa teve 516 aprovações; após a última edição de texto nos formulários, os 53 cenários de interface passaram novamente. O parâmetro `--identification-checks` seleciona os novos cenários.
+
+O publicador estático possui 15 testes em `test_alto_custo_static_publish.py`. Execute `python tests/test_alto_custo_static_publish.py` localmente e `python scripts/test-alto-custo-publisher-linux.py` para a verificação nativa Linux obrigatória antes da publicação. No Windows, nove casos POSIX são pulados explicitamente; no Linux todos passaram, sem chamadas reais a serviços nesses testes. A ativação e a simulação de renovação foram conferidas separadamente na VM.
+
+Procedimentos e limites: [publicação](../docs/deploy-alto-custo.md) e [checklist preenchido](../docs/qa-identificacao-alto-custo.md). Evidências locais ignoradas: `tests/.build/alto-custo-publication/`. A classificação de segurança do Google permanece uma pendência externa; HTTPS e testes funcionais não a substituem.

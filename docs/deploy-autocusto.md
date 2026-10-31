@@ -1,4 +1,6 @@
-# AutoCusto — publicação atual em 31/10/2026
+# AutoCusto — base da API e publicação inicial de 31/10/2026
+
+**Atualização posterior:** o endereço principal passou a ser `https://altocusto.duckdns.org/`, com identificação do Grupo 5 e novos arquivos públicos. Consulte `deploy-alto-custo.md` para a operação estática atual, recuperação que preserva o Azure e pendência do Google. Os detalhes abaixo registram a implantação base da API, cujo executável/INI permanecem ativos; o endereço anterior foi mantido.
 
 Endereço público: **https://autocusto.duckdns.org/**. O domínio gratuito foi criado pelo usuário no DuckDNS e aponta para a VM `102.37.16.34`. O DNS é administrado no DuckDNS; esta opção não utiliza Cloudflare.
 
