@@ -67,6 +67,12 @@
 **Files:** `docs/qa-identificacao-alto-custo.md`, documentação de publicação, resumo do Grupo 5 e commits de fontes/testes.
 
 - [x] Entregar checklist operacional preenchido, capturas e resumo atualizado, distinguindo funcionalidades implementadas e pendentes.
-- [ ] Auditar índice/histórico novo com Gitleaks e comparação com segredos conhecidos; verificar diff e ausência de arquivos privados.
-- [ ] Enviar commits normais ao GitHub e conferir o commit remoto, com branch/arquivos validados na pasta principal.
-- [ ] Informar endereço efetivo e estado do aviso do Google; listar qualquer bloqueio de acesso, DNS ou processamento externo.
+- [x] Auditar índice/histórico novo com Gitleaks e comparação com segredos conhecidos; verificar diff e ausência de arquivos privados.
+- [x] Enviar commits normais ao GitHub e conferir o commit remoto, com branch/arquivos validados na pasta principal.
+- [x] Informar endereço efetivo e estado do aviso do Google; listar qualquer bloqueio de acesso, DNS ou processamento externo.
+
+## Resultado
+
+Release estática final `20261031-f8085877267f`, com o mesmo conteúdo público da primeira ativação revisada. Identificação e títulos publicados; 516 verificações na regressão isolada, 53 na conferência final da interface e 15 testes nativos do publicador aprovados. DNS/HTTPS, 54 arquivos públicos, arquivo Google, recusa da API sem login e preservação da API/INI/Azure conferidos. Renovação simulada com reload explícito aprovada. Nenhuma escrita de dados reais.
+
+Auditoria final: 520 arquivos preparados e histórico novo sem segredos detectados. `main` na pasta principal e sincronizada com o GitHub; documentação produzida no chat paralelo foi preservada. A remoção do aviso do Google permanece uma pendência externa: revisão solicitada pela interface, sem confirmação de retirada. O relatório do endereço novo informa ausência de dados, sem aprovação de segurança.
