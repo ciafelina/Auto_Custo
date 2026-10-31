@@ -11,7 +11,7 @@ node tests/password-profile-session.mjs
 python tests/test_password_recovery_publish.py
 ```
 
-Resultados locais: API 16, navegador 10, perfil/sessão 2 e publicação/retorno 7 cenários aprovados. O teste Windows da publicação simula o lock POSIX; o mesmo arquivo roda também no Linux para validar a plataforma real. Os navegadores usam API interceptada/dados fictícios. `scripts/test-password-recovery-vm.py --functional-only` testa o executável Linux, TLS SMTP e uma única conta temporária no SQL Server Azure, preservando a versão pública. `--smtp-only` repete somente o envio real após corrigir a credencial externa; nenhuma credencial é registrada. O helper não altera uma release já ativa.
+Resultados: API local 16, navegador 10, perfil/sessão 2 e publicação/retorno 9 cenários aprovados em Windows e Linux; TLS SMTP 4 e API Azure 14 aprovados. O teste Windows da publicação simula o lock POSIX; o mesmo arquivo roda também no Linux para validar a plataforma real. Os navegadores usam API interceptada/dados fictícios. `scripts/test-password-recovery-vm.py --functional-only` testa o executável Linux, TLS SMTP e uma única conta temporária no SQL Server Azure, preservando a versão pública. `--smtp-only` repete somente o envio real após corrigir a credencial externa; nenhuma credencial é registrada. O helper não altera uma release já ativa. Publicação `20261031-4fb74078a7eb` confirmada; 60 hashes públicos conferidos externamente. Não foram repetidas as suítes antigas.
 
 Ver [funcionamento e configuração](../docs/recuperacao-senha.md) e [roteiro QA](../docs/qa-recuperacao-senha.md) para estado da validação/publicação. Uma aceitação SMTP não representa confirmação de caixa de entrada.
 

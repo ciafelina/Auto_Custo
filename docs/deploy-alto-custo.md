@@ -1,5 +1,7 @@
 # Alto Custo — apresentação e publicação em 31/10/2026
 
+**Atualização posterior no mesmo dia:** recuperação de senha por e-mail publicada, com novo executável e novas telas. Operação, versão ativa e retorno seguro estão em [recuperacao-senha.md](recuperacao-senha.md). As seções abaixo registram a publicação estática anterior; seus caminhos de API e comandos de retorno não representam mais a instalação ativa. O acompanhamento do Google permanece descrito aqui.
+
 Endereço principal: **https://altocusto.duckdns.org/**. O nome público foi corrigido para **Alto Custo**, com identificação “Projeto acadêmico desenvolvido pelo Grupo 5 — Univesp. Versão 1.0.0 · 2026”. O endereço anterior, `https://autocusto.duckdns.org/`, foi preservado e apresenta a mesma interface revisada. O DNS continua no DuckDNS, apontando os dois nomes para a VM do projeto; não há Cloudflare nesta opção gratuita.
 
 ## O que mudou

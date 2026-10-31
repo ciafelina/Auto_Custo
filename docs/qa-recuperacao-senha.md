@@ -32,4 +32,4 @@ Executar com conta temporária de teste e e-mail acessível, preservando cadastr
 - [x] Enviar formulários — usar endereço configurado da API e JSON POST; não guardar token no navegador.
 - [x] Simular falha na ativação e na gravação do marcador — restaurar arquivos, API anterior e estado da publicação.
 - [x] Retornar ao binário anterior — trocar a chave efetiva em configuração privada, preservando Azure e impedindo reativação de sessões revogadas.
-- [ ] Publicar após os testes — conferir HTTPS, novas telas/rotas, autenticação privada, prova Google e configuração Azure preservada.
+- [x] Publicar após os testes — conferir HTTPS, novas telas/rotas, autenticação privada, prova Google e configuração Azure preservada.
